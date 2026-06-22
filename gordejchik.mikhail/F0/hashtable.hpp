@@ -19,6 +19,8 @@ namespace gordejchik {
     HashTable(const HashTable&) = delete;
     HashTable& operator=(const HashTable&) = delete;
 
+    void insert(const Key& key, const Value& value);
+
     size_t size() const;
     bool empty() const;
     size_t capacity() const;
@@ -37,6 +39,8 @@ namespace gordejchik {
     size_t size_;
     Hash hash_;
     Equal equal_;
+
+    void insertInto(Slot* target, size_t cap, Key key, Value value);
   };
 
   template< class Key, class Value, class Hash, class Equal >
@@ -85,6 +89,33 @@ namespace gordejchik {
     return capacity_;
   }
 
+  template< class Key, class Value, class Hash, class Equal >
+  void HashTable< Key, Value, Hash, Equal >::insert(
+      const Key& key, const Value& value)
+  {
+    insertInto(slots_, capacity_, key, value);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void HashTable< Key, Value, Hash, Equal >::insertInto(
+      Slot* target, size_t cap, Key key, Value value)
+  {
+    size_t idx = hash_(key) % cap;
+    while (true) {
+      if (!target[idx].occupied_) {
+        target[idx].key_ = std::move(key);
+        target[idx].value_ = std::move(value);
+        target[idx].occupied_ = true;
+        ++size_;
+        return;
+      }
+      if (equal_(target[idx].key_, key)) {
+        target[idx].value_ = std::move(value);
+        return;
+      }
+      idx = (idx + 1) % cap;
+    }
+  }
 }
 
 #endif
