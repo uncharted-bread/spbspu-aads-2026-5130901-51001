@@ -338,3 +338,97 @@ void gordejchik::cmdOptimize(DeckStore& decks,
   freeBackpackResult(res);
 }
 
+void gordejchik::cmdBattle(DeckStore& decks,
+    const std::string& deck1Name,
+    const std::string& deck2Name,
+    const std::string& budgetStr, std::ostream& out)
+{
+  if (!decks.contains(deck1Name)
+      || !decks.contains(deck2Name)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  int budget = 0;
+  try {
+    size_t pos = 0;
+    budget = std::stoi(budgetStr, &pos);
+    if (pos != budgetStr.size() || budget < 0) {
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+  } catch (...) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck1 = decks.at(deck1Name);
+  Deck* deck2 = decks.at(deck2Name);
+  const size_t count1 = deck1->cards_.size();
+  const size_t count2 = deck2->cards_.size();
+  Card** arr1 = nullptr;
+  Card** arr2 = nullptr;
+  if (count1 > 0) {
+    arr1 = new Card*[count1];
+    size_t idx = 0;
+    deck1->cards_.forEach(
+      [&arr1, &idx](const std::string&, Card* card)
+      {
+        arr1[idx] = card;
+        ++idx;
+      }
+    );
+  }
+  if (count2 > 0) {
+    arr2 = new Card*[count2];
+    size_t idx = 0;
+    deck2->cards_.forEach(
+      [&arr2, &idx](const std::string&, Card* card)
+      {
+        arr2[idx] = card;
+        ++idx;
+      }
+    );
+  }
+  BackpackResult res1 = solveBackpack(arr1, count1, budget);
+  BackpackResult res2 = solveBackpack(arr2, count2, budget);
+  delete[] arr1;
+  delete[] arr2;
+  out << "=== " << deck1Name << " ===" << "\n";
+  if (res1.count_ > 0) {
+    std::string* names1 = new std::string[res1.count_];
+    for (size_t i = 0; i < res1.count_; ++i) {
+      names1[i] = res1.cards_[i]->name_;
+    }
+    std::sort(names1, names1 + res1.count_);
+    for (size_t i = 0; i < res1.count_; ++i) {
+      Card* card = deck1->cards_.at(names1[i]);
+      out << names1[i] << ": POWER " << card->power_
+          << ", COST " << card->cost_ << "\n";
+    }
+    delete[] names1;
+  }
+  out << "TOTAL POWER: " << res1.totalPower_ << "\n";
+  out << "=== " << deck2Name << " ===" << "\n";
+  if (res2.count_ > 0) {
+    std::string* names2 = new std::string[res2.count_];
+    for (size_t i = 0; i < res2.count_; ++i) {
+      names2[i] = res2.cards_[i]->name_;
+    }
+    std::sort(names2, names2 + res2.count_);
+    for (size_t i = 0; i < res2.count_; ++i) {
+      Card* card = deck2->cards_.at(names2[i]);
+      out << names2[i] << ": POWER " << card->power_
+          << ", COST " << card->cost_ << "\n";
+    }
+    delete[] names2;
+  }
+  out << "TOTAL POWER: " << res2.totalPower_ << "\n";
+  if (res1.totalPower_ > res2.totalPower_) {
+    out << "WINNER: " << deck1Name << "\n";
+  } else if (res2.totalPower_ > res1.totalPower_) {
+    out << "WINNER: " << deck2Name << "\n";
+  } else {
+    out << "DRAW" << "\n";
+  }
+  freeBackpackResult(res1);
+  freeBackpackResult(res2);
+}

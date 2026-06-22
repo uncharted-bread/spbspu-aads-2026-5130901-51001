@@ -20,7 +20,8 @@ namespace gordejchik {
   void cmdSetType(DeckStore& decks, const std::string& deckName, const std::string& cardName, const std::string& type, std::ostream& out);
   void cmdSetDesc(DeckStore& decks, const std::string& deckName, const std::string& cardName, const std::string& desc, std::ostream& out);
   void cmdRange(DeckStore& decks, const std::string& deckName, const std::string& stat, const std::string& minStr, const std::string& maxStr, std::ostream& out);
-  void cmdOptimize(DeckStore& decks, const std::string& deckName, const std::string& budgetStr, const std::string& newDeckName, std::ostream& out);                                                               
+  void cmdOptimize(DeckStore& decks, const std::string& deckName, const std::string& budgetStr, const std::string& newDeckName, std::ostream& out);
+  void cmdBattle(DeckStore& decks, const std::string& deck1Name, const std::string& deck2Name, const std::string& budgetStr, std::ostream& out);                                                               
 }
 
 #endif
