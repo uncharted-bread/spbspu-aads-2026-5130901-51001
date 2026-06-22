@@ -44,4 +44,38 @@ BOOST_AUTO_TEST_CASE(atNonExisting)
   BOOST_CHECK_THROW(ht.at("x"), std::out_of_range);
 }
 
+BOOST_AUTO_TEST_CASE(eraseExisting)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("a", 1);
+  ht.insert("b", 2);
+  ht.insert("c", 3);
+
+  ht.erase("b");
+  BOOST_TEST(ht.size() == 2u);
+  BOOST_TEST(!ht.contains("b"));
+  BOOST_TEST(ht.contains("a"));
+  BOOST_TEST(ht.contains("c"));
+}
+
+BOOST_AUTO_TEST_CASE(eraseNonExisting)
+{
+  HashTable< std::string, int > ht;
+  BOOST_CHECK_THROW(ht.erase("z"), std::out_of_range);
+}
+
+BOOST_AUTO_TEST_CASE(rehashPreservesData)
+{
+  HashTable< int, int > ht(4);
+  ht.insert(1, 10);
+  ht.insert(2, 20);
+  ht.insert(3, 30);
+  ht.insert(4, 40);
+
+  BOOST_TEST(ht.capacity() > 4u);
+  BOOST_TEST(ht.size() == 4u);
+  BOOST_TEST(ht.at(1) == 10);
+  BOOST_TEST(ht.at(4) == 40);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
