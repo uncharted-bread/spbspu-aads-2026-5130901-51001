@@ -107,7 +107,7 @@ void gordejchik::cmdShow(DeckStore& decks,
     out << "<INVALID COMMAND>" << "\n";
     return;
   }
-  Deck* deck = decks.at(name);
+  const Deck* deck = decks.at(name);
   const size_t count = deck->cards_.size();
   if (count == 0) {
     return;
@@ -240,7 +240,7 @@ void gordejchik::cmdRange(DeckStore& decks,
     out << "<INVALID COMMAND>" << "\n";
     return;
   }
-  Deck* deck = decks.at(deckName);
+  const Deck* deck = decks.at(deckName);
   const size_t total = deck->cards_.size();
   if (total == 0) {
     return;
