@@ -34,6 +34,8 @@ int main()
       gordejchik::cmdSetType(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], std::cout);
     } else if (name == "set-desc" && cmd.count_ == 4) {
       gordejchik::cmdSetDesc(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], std::cout);
+    } else if (name == "range" && cmd.count_ == 5) {
+      gordejchik::cmdRange(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], cmd.tokens_[4], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }

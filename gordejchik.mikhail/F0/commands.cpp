@@ -200,3 +200,72 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
   }
   deck->cards_.at(cardName)->description_ = desc;
 }
+
+void gordejchik::cmdRange(DeckStore& decks,
+    const std::string& deckName,
+    const std::string& stat,
+    const std::string& minStr,
+    const std::string& maxStr, std::ostream& out)
+{
+  if (!decks.contains(deckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  if (stat != "power" && stat != "cost") {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  int minVal = 0;
+  int maxVal = 0;
+  try {
+    size_t pos1 = 0;
+    minVal = std::stoi(minStr, &pos1);
+    if (pos1 != minStr.size()) {
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+    size_t pos2 = 0;
+    maxVal = std::stoi(maxStr, &pos2);
+    if (pos2 != maxStr.size()) {
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+  } catch (...) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  if (minVal > maxVal) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck = decks.at(deckName);
+  const size_t total = deck->cards_.size();
+  if (total == 0) {
+    return;
+  }
+  std::string* names = new std::string[total];
+  size_t found = 0;
+  const bool usePower = (stat == "power");
+  deck->cards_.forEach(
+    [&names, &found, usePower, minVal, maxVal](
+        const std::string& key, Card* card)
+    {
+      const int val = usePower ? card->power_ : card->cost_;
+      if (val >= minVal && val <= maxVal) {
+        names[found] = key;
+        ++found;
+      }
+    }
+  );
+  if (found == 0) {
+    delete[] names;
+    return;
+  }
+  std::sort(names, names + found);
+  for (size_t i = 0; i < found; ++i) {
+    Card* card = deck->cards_.at(names[i]);
+    out << names[i] << ": POWER " << card->power_
+        << ", COST " << card->cost_ << "\n";
+  }
+  delete[] names;
+}
