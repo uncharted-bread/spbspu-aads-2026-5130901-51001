@@ -1,4 +1,5 @@
 #include "commands.hpp"
+#include <algorithm>
 
 void gordejchik::cmdCreate(DeckStore& decks,
     const std::string& name, std::ostream& out)
@@ -95,4 +96,34 @@ void gordejchik::cmdRemove(DeckStore& decks,
   Card* card = deck->cards_.at(cardName);
   deck->cards_.erase(cardName);
   delete card;
+}
+
+void gordejchik::cmdShow(DeckStore& decks,
+    const std::string& name, std::ostream& out)
+{
+  if (!decks.contains(name)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck = decks.at(name);
+  const size_t count = deck->cards_.size();
+  if (count == 0) {
+    return;
+  }
+  std::string* names = new std::string[count];
+  size_t idx = 0;
+  deck->cards_.forEach(
+    [&names, &idx](const std::string& key, Card*)
+    {
+      names[idx] = key;
+      ++idx;
+    }
+  );
+  std::sort(names, names + count);
+  for (size_t i = 0; i < count; ++i) {
+    Card* card = deck->cards_.at(names[i]);
+    out << names[i] << ": POWER " << card->power_
+        << ", COST " << card->cost_ << "\n";
+  }
+  delete[] names;
 }
