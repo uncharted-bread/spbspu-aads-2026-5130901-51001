@@ -30,6 +30,7 @@ namespace gordejchik {
 
   private:
     static const size_t DEFAULT_CAPACITY = 16;
+    static const size_t GROW_FACTOR = 2;
 
     struct Slot {
       Key key_;
@@ -45,6 +46,8 @@ namespace gordejchik {
     Equal equal_;
 
     size_t findIndex(const Key& key) const;
+    bool shouldGrow() const;
+    void rehash(size_t newCapacity);
     void insertInto(Slot* target, size_t cap, Key key, Value value);
   };
 
@@ -143,9 +146,39 @@ namespace gordejchik {
   }
 
   template< class Key, class Value, class Hash, class Equal >
+  bool
+  HashTable< Key, Value, Hash, Equal >::shouldGrow() const
+  {
+    return size_ * 4 >= capacity_ * 3;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void HashTable< Key, Value, Hash, Equal >::rehash(
+      size_t newCapacity)
+  {
+    Slot* newSlots = new Slot[newCapacity]();
+    Slot* oldSlots = slots_;
+    size_t oldCapacity = capacity_;
+    slots_ = newSlots;
+    capacity_ = newCapacity;
+    size_ = 0;
+    for (size_t i = 0; i < oldCapacity; ++i) {
+      if (oldSlots[i].occupied_) {
+        insertInto(slots_, capacity_,
+            std::move(oldSlots[i].key_),
+            std::move(oldSlots[i].value_));
+      }
+    }
+    delete[] oldSlots;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
   void HashTable< Key, Value, Hash, Equal >::insert(
       const Key& key, const Value& value)
   {
+    if (shouldGrow()) {
+      rehash(capacity_ * GROW_FACTOR);
+    }
     insertInto(slots_, capacity_, key, value);
   }
 
