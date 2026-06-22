@@ -78,3 +78,21 @@ void gordejchik::cmdAdd(DeckStore& decks,
   Card* card = new Card{cardName, power, cost, "", ""};
   deck->cards_.insert(cardName, card);
 }
+
+void gordejchik::cmdRemove(DeckStore& decks,
+    const std::string& deckName,
+    const std::string& cardName, std::ostream& out)
+{
+  if (!decks.contains(deckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck = decks.at(deckName);
+  if (!deck->cards_.contains(cardName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Card* card = deck->cards_.at(cardName);
+  deck->cards_.erase(cardName);
+  delete card;
+}

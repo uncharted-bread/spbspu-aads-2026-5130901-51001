@@ -18,6 +18,8 @@ namespace gordejchik {
   void cmdAdd(DeckStore& decks, const std::string& deckName,
     const std::string& cardName, const std::string& powerStr,
     const std::string& costStr, std::ostream& out);
+  void cmdRemove(DeckStore& decks, const std::string& deckName,
+    const std::string& cardName, std::ostream& out);
 }
 
 #endif
