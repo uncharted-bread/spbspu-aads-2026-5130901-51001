@@ -1,6 +1,7 @@
 #include "commands.hpp"
 #include "backpack.hpp"
 #include <algorithm>
+#include <fstream>
 
 void gordejchik::cmdCreate(DeckStore& decks,
     const std::string& name, std::ostream& out)
@@ -468,4 +469,32 @@ void gordejchik::cmdMerge(DeckStore& decks,
     }
   );
   decks.insert(newName, merged);
+}
+
+void gordejchik::cmdSave(DeckStore& decks,
+    const std::string& deckName,
+    const std::string& filename, std::ostream& out)
+{
+  if (!decks.contains(deckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck = decks.at(deckName);
+  std::ofstream file(filename);
+  if (!file.is_open()) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  const size_t count = deck->cards_.size();
+  file << count << "\n";
+  deck->cards_.forEach(
+    [&file](const std::string&, Card* card)
+    {
+      file << card->name_ << " "
+          << card->power_ << " "
+          << card->cost_ << "\n";
+      file << card->type_ << "\n";
+      file << card->description_ << "\n";
+    }
+  );
 }
