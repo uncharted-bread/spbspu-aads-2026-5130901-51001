@@ -166,3 +166,20 @@ void gordejchik::cmdInfo(DeckStore& decks,
   std::string footer(header.size(), '=');
   out << footer << "\n";
 }
+
+void gordejchik::cmdSetType(DeckStore& decks,
+    const std::string& deckName,
+    const std::string& cardName,
+    const std::string& type, std::ostream& out)
+{
+  if (!decks.contains(deckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck = decks.at(deckName);
+  if (!deck->cards_.contains(cardName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  deck->cards_.at(cardName)->type_ = type;
+}

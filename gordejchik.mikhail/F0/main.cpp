@@ -23,16 +23,15 @@ int main()
     } else if (name == "help" && cmd.count_ == 1) {
       gordejchik::cmdHelp(std::cout);
     } else if (name == "add" && cmd.count_ == 5) {
-      gordejchik::cmdAdd(decks, cmd.tokens_[1], cmd.tokens_[2],
-          cmd.tokens_[3], cmd.tokens_[4], std::cout);
+      gordejchik::cmdAdd(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], cmd.tokens_[4], std::cout);
     } else if (name == "remove" && cmd.count_ == 3) {
-      gordejchik::cmdRemove(decks, cmd.tokens_[1],
-          cmd.tokens_[2], std::cout);
+      gordejchik::cmdRemove(decks, cmd.tokens_[1], cmd.tokens_[2], std::cout);
     } else if (name == "show" && cmd.count_ == 2) {
       gordejchik::cmdShow(decks, cmd.tokens_[1], std::cout);
     } else if (name == "info" && cmd.count_ == 3) {
-      gordejchik::cmdInfo(decks, cmd.tokens_[1],
-          cmd.tokens_[2], std::cout);
+      gordejchik::cmdInfo(decks, cmd.tokens_[1], cmd.tokens_[2], std::cout);
+    } else if (name == "set-type" && cmd.count_ == 4) {
+      gordejchik::cmdSetType(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }
