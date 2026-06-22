@@ -432,3 +432,40 @@ void gordejchik::cmdBattle(DeckStore& decks,
   freeBackpackResult(res1);
   freeBackpackResult(res2);
 }
+
+void gordejchik::cmdMerge(DeckStore& decks,
+    const std::string& newName,
+    const std::string& name1,
+    const std::string& name2, std::ostream& out)
+{
+  if (!decks.contains(name1) || !decks.contains(name2)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  if (decks.contains(newName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* d1 = decks.at(name1);
+  Deck* d2 = decks.at(name2);
+  Deck* merged = new Deck(newName);
+  d1->cards_.forEach(
+    [&merged](const std::string&, Card* card)
+    {
+      Card* copy = new Card{card->name_, card->power_,
+          card->cost_, card->type_, card->description_};
+      merged->cards_.insert(copy->name_, copy);
+    }
+  );
+  d2->cards_.forEach(
+    [&merged](const std::string&, Card* card)
+    {
+      if (!merged->cards_.contains(card->name_)) {
+        Card* copy = new Card{card->name_, card->power_,
+            card->cost_, card->type_, card->description_};
+        merged->cards_.insert(copy->name_, copy);
+      }
+    }
+  );
+  decks.insert(newName, merged);
+}
