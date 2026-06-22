@@ -14,10 +14,12 @@ namespace gordejchik {
   public:
     HashTable();
     explicit HashTable(size_t capacity);
+    HashTable(const HashTable& other);
+    HashTable(HashTable&& other);
     ~HashTable();
 
-    HashTable(const HashTable&) = delete;
-    HashTable& operator=(const HashTable&) = delete;
+    HashTable& operator=(const HashTable& other);
+    HashTable& operator=(HashTable&& other);
 
     void insert(const Key& key, const Value& value);
     Value& at(const Key& key);
@@ -74,9 +76,77 @@ namespace gordejchik {
   }
 
   template< class Key, class Value, class Hash, class Equal >
+  HashTable< Key, Value, Hash, Equal >::HashTable(
+      const HashTable& other):
+    slots_(new Slot[other.capacity_]()),
+    capacity_(other.capacity_),
+    size_(0),
+    hash_(other.hash_),
+    equal_(other.equal_)
+  {
+    for (size_t i = 0; i < capacity_; ++i) {
+      slots_[i] = other.slots_[i];
+    }
+    size_ = other.size_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  HashTable< Key, Value, Hash, Equal >::HashTable(
+      HashTable&& other):
+    slots_(other.slots_),
+    capacity_(other.capacity_),
+    size_(other.size_),
+    hash_(std::move(other.hash_)),
+    equal_(std::move(other.equal_))
+  {
+    other.slots_ = nullptr;
+    other.capacity_ = 0;
+    other.size_ = 0;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
   HashTable< Key, Value, Hash, Equal >::~HashTable()
   {
     delete[] slots_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  HashTable< Key, Value, Hash, Equal >&
+  HashTable< Key, Value, Hash, Equal >::operator=(
+      const HashTable& other)
+  {
+    if (this != &other) {
+      Slot* newSlots = new Slot[other.capacity_]();
+      for (size_t i = 0; i < other.capacity_; ++i) {
+        newSlots[i] = other.slots_[i];
+      }
+      delete[] slots_;
+      slots_ = newSlots;
+      capacity_ = other.capacity_;
+      size_ = other.size_;
+      hash_ = other.hash_;
+      equal_ = other.equal_;
+    }
+    return *this;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  HashTable< Key, Value, Hash, Equal >&
+  HashTable< Key, Value, Hash, Equal >::operator=(
+      HashTable&& other)
+  {
+    if (this != &other) {
+      delete[] slots_;
+      slots_ = other.slots_;
+      capacity_ = other.capacity_;
+      size_ = other.size_;
+      hash_ = std::move(other.hash_);
+      equal_ = std::move(other.equal_);
+      other.slots_ = nullptr;
+      other.capacity_ = 0;
+      other.size_ = 0;
+    }
+    return *this;
   }
 
   template< class Key, class Value, class Hash, class Equal >
