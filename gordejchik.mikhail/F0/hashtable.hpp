@@ -34,6 +34,7 @@ namespace gordejchik {
     struct Slot {
       Key key_;
       Value value_;
+      size_t psl_;
       bool occupied_;
     };
 
@@ -98,16 +99,16 @@ namespace gordejchik {
       const Key& key) const
   {
     size_t idx = hash_(key) % capacity_;
-    size_t checked = 0;
-    while (checked < capacity_) {
-      if (!slots_[idx].occupied_) {
+    size_t psl = 0;
+    while (slots_[idx].occupied_) {
+      if (psl > slots_[idx].psl_) {
         return capacity_;
       }
       if (equal_(slots_[idx].key_, key)) {
         return idx;
       }
+      ++psl;
       idx = (idx + 1) % capacity_;
-      ++checked;
     }
     return capacity_;
   }
@@ -153,10 +154,12 @@ namespace gordejchik {
       Slot* target, size_t cap, Key key, Value value)
   {
     size_t idx = hash_(key) % cap;
+    size_t psl = 0;
     while (true) {
       if (!target[idx].occupied_) {
         target[idx].key_ = std::move(key);
         target[idx].value_ = std::move(value);
+        target[idx].psl_ = psl;
         target[idx].occupied_ = true;
         ++size_;
         return;
@@ -165,6 +168,12 @@ namespace gordejchik {
         target[idx].value_ = std::move(value);
         return;
       }
+      if (psl > target[idx].psl_) {
+        std::swap(key, target[idx].key_);
+        std::swap(value, target[idx].value_);
+        std::swap(psl, target[idx].psl_);
+      }
+      ++psl;
       idx = (idx + 1) % cap;
     }
   }
