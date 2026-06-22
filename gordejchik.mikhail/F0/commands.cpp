@@ -127,3 +127,42 @@ void gordejchik::cmdShow(DeckStore& decks,
   }
   delete[] names;
 }
+
+void gordejchik::cmdInfo(DeckStore& decks,
+    const std::string& deckName,
+    const std::string& cardName, std::ostream& out)
+{
+  if (!decks.contains(deckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck = decks.at(deckName);
+  if (!deck->cards_.contains(cardName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  const Card* card = deck->cards_.at(cardName);
+  std::string upper = card->name_;
+  for (size_t i = 0; i < upper.size(); ++i) {
+    if (upper[i] >= 'a' && upper[i] <= 'z') {
+      upper[i] = upper[i] - 'a' + 'A';
+    }
+  }
+  std::string header = "=== " + upper + " ===";
+  out << header << "\n";
+  if (card->type_.empty()) {
+    out << "TYPE: <none>" << "\n";
+  } else {
+    out << "TYPE: " << card->type_ << "\n";
+  }
+  out << "POWER: " << card->power_
+      << ", COST: " << card->cost_ << "\n";
+  out << "DATA:" << "\n";
+  if (card->description_.empty()) {
+    out << "<no data>" << "\n";
+  } else {
+    out << card->description_ << "\n";
+  }
+  std::string footer(header.size(), '=');
+  out << footer << "\n";
+}

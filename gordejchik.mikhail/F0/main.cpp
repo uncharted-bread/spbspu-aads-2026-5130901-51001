@@ -30,6 +30,9 @@ int main()
           cmd.tokens_[2], std::cout);
     } else if (name == "show" && cmd.count_ == 2) {
       gordejchik::cmdShow(decks, cmd.tokens_[1], std::cout);
+    } else if (name == "info" && cmd.count_ == 3) {
+      gordejchik::cmdInfo(decks, cmd.tokens_[1],
+          cmd.tokens_[2], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }

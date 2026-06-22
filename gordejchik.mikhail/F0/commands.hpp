@@ -21,7 +21,9 @@ namespace gordejchik {
   void cmdRemove(DeckStore& decks, const std::string& deckName,
     const std::string& cardName, std::ostream& out);
   void cmdShow(DeckStore& decks, const std::string& name,
-    std::ostream& out);                                
+    std::ostream& out);
+  void cmdInfo(DeckStore& decks, const std::string& deckName,
+    const std::string& cardName, std::ostream& out);                                
 }
 
 #endif
