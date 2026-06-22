@@ -20,6 +20,9 @@ namespace gordejchik {
     HashTable& operator=(const HashTable&) = delete;
 
     void insert(const Key& key, const Value& value);
+    Value& at(const Key& key);
+    const Value& at(const Key& key) const;
+    bool contains(const Key& key) const;
 
     size_t size() const;
     bool empty() const;
@@ -40,6 +43,7 @@ namespace gordejchik {
     Hash hash_;
     Equal equal_;
 
+    size_t findIndex(const Key& key) const;
     void insertInto(Slot* target, size_t cap, Key key, Value value);
   };
 
@@ -87,6 +91,54 @@ namespace gordejchik {
   HashTable< Key, Value, Hash, Equal >::capacity() const
   {
     return capacity_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  size_t HashTable< Key, Value, Hash, Equal >::findIndex(
+      const Key& key) const
+  {
+    size_t idx = hash_(key) % capacity_;
+    size_t checked = 0;
+    while (checked < capacity_) {
+      if (!slots_[idx].occupied_) {
+        return capacity_;
+      }
+      if (equal_(slots_[idx].key_, key)) {
+        return idx;
+      }
+      idx = (idx + 1) % capacity_;
+      ++checked;
+    }
+    return capacity_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  Value& HashTable< Key, Value, Hash, Equal >::at(
+      const Key& key)
+  {
+    size_t idx = findIndex(key);
+    if (idx == capacity_) {
+      throw std::out_of_range("Key not found");
+    }
+    return slots_[idx].value_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  const Value& HashTable< Key, Value, Hash, Equal >::at(
+      const Key& key) const
+  {
+    size_t idx = findIndex(key);
+    if (idx == capacity_) {
+      throw std::out_of_range("Key not found");
+    }
+    return slots_[idx].value_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool HashTable< Key, Value, Hash, Equal >::contains(
+      const Key& key) const
+  {
+    return findIndex(key) != capacity_;
   }
 
   template< class Key, class Value, class Hash, class Equal >
