@@ -18,6 +18,8 @@ int main()
     const std::string& name = cmd.tokens_[0];
     if (name == "create" && cmd.count_ == 2) {
       gordejchik::cmdCreate(decks, cmd.tokens_[1], std::cout);
+    } else if (name == "delete" && cmd.count_ == 2) {
+      gordejchik::cmdDelete(decks, cmd.tokens_[1], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }

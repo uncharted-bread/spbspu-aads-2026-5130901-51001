@@ -12,7 +12,8 @@ namespace gordejchik {
 
   void cmdCreate(DeckStore& decks, const std::string& name,
       std::ostream& out);
-
+  void cmdDelete(DeckStore& decks, const std::string& name,
+      std::ostream& out);
 }
 
 #endif
