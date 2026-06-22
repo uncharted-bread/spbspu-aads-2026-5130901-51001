@@ -98,4 +98,18 @@ BOOST_AUTO_TEST_CASE(manyInsertionsAndDeletions)
   }
 }
 
+BOOST_AUTO_TEST_CASE(copyConstructor)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("x", 100);
+  ht.insert("y", 200);
+
+  HashTable< std::string, int > copy(ht);
+  BOOST_TEST(copy.size() == 2u);
+  BOOST_TEST(copy.at("x") == 100);
+
+  copy.insert("x", 999);
+  BOOST_TEST(ht.at("x") == 100);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
