@@ -23,6 +23,7 @@ namespace gordejchik {
     Value& at(const Key& key);
     const Value& at(const Key& key) const;
     bool contains(const Key& key) const;
+    void erase(const Key& key);
 
     size_t size() const;
     bool empty() const;
@@ -143,6 +144,29 @@ namespace gordejchik {
       const Key& key) const
   {
     return findIndex(key) != capacity_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void HashTable< Key, Value, Hash, Equal >::erase(
+      const Key& key)
+  {
+    size_t idx = findIndex(key);
+    if (idx == capacity_) {
+      throw std::out_of_range("Key not found");
+    }
+    size_t i = idx;
+    while (true) {
+      size_t j = (i + 1) % capacity_;
+      if (!slots_[j].occupied_ || slots_[j].psl_ == 0) {
+        break;
+      }
+      slots_[i] = std::move(slots_[j]);
+      slots_[i].psl_--;
+      i = j;
+    }
+    slots_[i].occupied_ = false;
+    slots_[i].psl_ = 0;
+    --size_;
   }
 
   template< class Key, class Value, class Hash, class Equal >
