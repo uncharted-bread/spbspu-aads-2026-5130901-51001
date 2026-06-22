@@ -20,6 +20,8 @@ int main()
       gordejchik::cmdCreate(decks, cmd.tokens_[1], std::cout);
     } else if (name == "delete" && cmd.count_ == 2) {
       gordejchik::cmdDelete(decks, cmd.tokens_[1], std::cout);
+    } else if (name == "help" && cmd.count_ == 1) {
+      gordejchik::cmdHelp(std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }

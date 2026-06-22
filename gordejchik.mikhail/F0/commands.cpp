@@ -21,3 +21,22 @@ void gordejchik::cmdDelete(DeckStore& decks,
   decks.erase(name);
   delete deck;
 }
+
+void gordejchik::cmdHelp(std::ostream& out)
+{
+  out << "create <deck>" << "\n";
+  out << "delete <deck>" << "\n";
+  out << "add <deck> <card> <power> <cost>" << "\n";
+  out << "remove <deck> <card>" << "\n";
+  out << "set-type <deck> <card> <type>" << "\n";
+  out << "set-desc <deck> <card> <text>" << "\n";
+  out << "show <deck>" << "\n";
+  out << "info <deck> <card>" << "\n";
+  out << "range <deck> <stat> <min> <max>" << "\n";
+  out << "merge <new-deck> <deck-1> <deck-2>" << "\n";
+  out << "optimize <deck> <budget> [<new-deck>]" << "\n";
+  out << "battle <deck-1> <deck-2> <budget>" << "\n";
+  out << "save <deck> <filename>" << "\n";
+  out << "load <deck> <filename>" << "\n";
+  out << "help" << "\n";
+}
