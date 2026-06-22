@@ -498,3 +498,67 @@ void gordejchik::cmdSave(DeckStore& decks,
     }
   );
 }
+
+void gordejchik::cmdLoad(DeckStore& decks,
+    const std::string& deckName,
+    const std::string& filename, std::ostream& out)
+{
+  if (decks.contains(deckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  size_t count = 0;
+  if (!(file >> count)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  file.ignore();
+  Deck* deck = new Deck(deckName);
+  for (size_t i = 0; i < count; ++i) {
+    std::string header;
+    if (!std::getline(file, header)) {
+      delete deck;
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+    size_t space1 = header.find(' ');
+    if (space1 == std::string::npos) {
+      delete deck;
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+    size_t space2 = header.find(' ', space1 + 1);
+    if (space2 == std::string::npos) {
+      delete deck;
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+    std::string cardName = header.substr(0, space1);
+    int power = 0;
+    int cost = 0;
+    try {
+      power = std::stoi(header.substr(space1 + 1));
+      cost = std::stoi(header.substr(space2 + 1));
+    } catch (...) {
+      delete deck;
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+    std::string type;
+    std::string desc;
+    if (!std::getline(file, type)
+        || !std::getline(file, desc)) {
+      delete deck;
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+    Card* card = new Card{cardName, power, cost, type, desc};
+    deck->cards_.insert(cardName, card);
+  }
+  decks.insert(deckName, deck);
+}
