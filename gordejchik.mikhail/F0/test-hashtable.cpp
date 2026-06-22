@@ -112,4 +112,15 @@ BOOST_AUTO_TEST_CASE(copyConstructor)
   BOOST_TEST(ht.at("x") == 100);
 }
 
+BOOST_AUTO_TEST_CASE(moveConstructor)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("a", 1);
+
+  HashTable< std::string, int > moved(std::move(ht));
+  BOOST_TEST(moved.size() == 1u);
+  BOOST_TEST(moved.at("a") == 1);
+  BOOST_TEST(ht.size() == 0u);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
