@@ -2,48 +2,94 @@
 #include "backpack.hpp"
 #include <algorithm>
 #include <fstream>
+#include <string>
+
+static const char* GREEN = "\033[32m";
+static const char* RED = "\033[31m";
+static const char* RESET = "\033[0m";
+
+static void ok(const std::string& msg)
+{
+  std::cerr << GREEN << ">> " << msg << RESET << "\n";
+}
+
+static void fail(std::ostream& out)
+{
+  out << "<INVALID COMMAND>" << "\n";
+  std::cerr << RED << ">> Ошибка: неверная команда" << RESET << "\n";
+}
+
+static bool parseInt(const std::string& str, int& result)
+{
+  try {
+    size_t pos = 0;
+    result = std::stoi(str, &pos);
+    if (pos != str.size()) {
+      return false;
+    }
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
 
 void gordejchik::cmdCreate(DeckStore& decks,
     const std::string& name, std::ostream& out)
 {
   if (decks.contains(name)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   decks.insert(name, new Deck(name));
-  std::cerr << "Колода '" << name << "' создана" << "\n";
+  ok("Колода '" + name + "' создана");
 }
 
 void gordejchik::cmdDelete(DeckStore& decks,
     const std::string& name, std::ostream& out)
 {
   if (!decks.contains(name)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Deck* deck = decks.at(name);
   decks.erase(name);
   delete deck;
-  std::cerr << "Колода '" << name << "' удалена" << "\n";
+  ok("Колода '" + name + "' удалена");
 }
 
 void gordejchik::cmdHelp(std::ostream& out)
 {
-  out << "create <deck>" << "\n";
-  out << "delete <deck>" << "\n";
-  out << "add <deck> <card> <power> <cost>" << "\n";
-  out << "remove <deck> <card>" << "\n";
-  out << "set-type <deck> <card> <type>" << "\n";
-  out << "set-desc <deck> <card> <text>" << "\n";
-  out << "show <deck>" << "\n";
-  out << "info <deck> <card>" << "\n";
-  out << "range <deck> <stat> <min> <max>" << "\n";
-  out << "merge <new-deck> <deck-1> <deck-2>" << "\n";
-  out << "optimize <deck> <budget> [<new-deck>]" << "\n";
-  out << "battle <deck-1> <deck-2> <budget>" << "\n";
-  out << "save <deck> <filename>" << "\n";
-  out << "load <deck> <filename>" << "\n";
-  out << "help" << "\n";
+  out << "create <deck>                        "
+      << "- создать пустую колоду" << "\n";
+  out << "delete <deck>                        "
+      << "- удалить колоду" << "\n";
+  out << "add <deck> <card> <power> <cost>     "
+      << "- добавить карту" << "\n";
+  out << "remove <deck> <card>                 "
+      << "- удалить карту" << "\n";
+  out << "set-type <deck> <card> <type>        "
+      << "- задать тип карты" << "\n";
+  out << "set-desc <deck> <card> <text>        "
+      << "- задать описание карты" << "\n";
+  out << "show <deck>                          "
+      << "- показать все карты" << "\n";
+  out << "info <deck> <card>                   "
+      << "- полная информация о карте" << "\n";
+  out << "range <deck> <stat> <min> <max>      "
+      << "- фильтр по диапазону" << "\n";
+  out << "merge <new-deck> <deck-1> <deck-2>   "
+      << "- объединить две колоды" << "\n";
+  out << "optimize <deck> <budget> [<new-deck>]"
+      << " - подбор карт (рюкзак)" << "\n";
+  out << "battle <deck-1> <deck-2> <budget>    "
+      << "- сравнить две колоды" << "\n";
+  out << "save <deck> <filename>               "
+      << "- сохранить в файл" << "\n";
+  out << "load <deck> <filename>               "
+      << "- загрузить из файла" << "\n";
+  out << "help                                 "
+      << "- список команд" << "\n";
+  ok("Справка выведена");
 }
 
 void gordejchik::cmdAdd(DeckStore& decks,
@@ -53,36 +99,23 @@ void gordejchik::cmdAdd(DeckStore& decks,
     const std::string& costStr, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   int power = 0;
   int cost = 0;
-  try {
-    size_t pos1 = 0;
-    power = std::stoi(powerStr, &pos1);
-    if (pos1 != powerStr.size()) {
-      out << "<INVALID COMMAND>" << "\n";
-      return;
-    }
-    size_t pos2 = 0;
-    cost = std::stoi(costStr, &pos2);
-    if (pos2 != costStr.size()) {
-      out << "<INVALID COMMAND>" << "\n";
-      return;
-    }
-  } catch (...) {
-    out << "<INVALID COMMAND>" << "\n";
+  if (!parseInt(powerStr, power) || !parseInt(costStr, cost)) {
+    fail(out);
     return;
   }
   Deck* deck = decks.at(deckName);
   if (deck->cards_.contains(cardName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Card* card = new Card{cardName, power, cost, "", ""};
   deck->cards_.insert(cardName, card);
-  std::cerr << "Карта '" << cardName << "' добавлена" << "\n";
+  ok("Карта '" + cardName + "' добавлена в '" + deckName + "'");
 }
 
 void gordejchik::cmdRemove(DeckStore& decks,
@@ -90,25 +123,25 @@ void gordejchik::cmdRemove(DeckStore& decks,
     const std::string& cardName, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Deck* deck = decks.at(deckName);
   if (!deck->cards_.contains(cardName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Card* card = deck->cards_.at(cardName);
   deck->cards_.erase(cardName);
   delete card;
-  std::cerr << "Карта '" << cardName << "' удалена" << "\n";
+  ok("Карта '" + cardName + "' удалена из '" + deckName + "'");
 }
 
 void gordejchik::cmdShow(DeckStore& decks,
     const std::string& name, std::ostream& out)
 {
   if (!decks.contains(name)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   const Deck* deck = decks.at(name);
@@ -132,6 +165,7 @@ void gordejchik::cmdShow(DeckStore& decks,
         << ", COST " << card->cost_ << "\n";
   }
   delete[] names;
+  ok("Колода '" + name + "': " + std::to_string(count) + " карт");
 }
 
 void gordejchik::cmdInfo(DeckStore& decks,
@@ -139,12 +173,12 @@ void gordejchik::cmdInfo(DeckStore& decks,
     const std::string& cardName, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Deck* deck = decks.at(deckName);
   if (!deck->cards_.contains(cardName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   const Card* card = deck->cards_.at(cardName);
@@ -171,6 +205,7 @@ void gordejchik::cmdInfo(DeckStore& decks,
   }
   std::string footer(header.size(), '=');
   out << footer << "\n";
+  ok("Информация о карте '" + cardName + "'");
 }
 
 void gordejchik::cmdSetType(DeckStore& decks,
@@ -179,16 +214,16 @@ void gordejchik::cmdSetType(DeckStore& decks,
     const std::string& type, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Deck* deck = decks.at(deckName);
   if (!deck->cards_.contains(cardName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   deck->cards_.at(cardName)->type_ = type;
-  std::cerr << "Тип установлен для '" << cardName << "'" << "\n";
+  ok("Тип карты '" + cardName + "' установлен");
 }
 
 void gordejchik::cmdSetDesc(DeckStore& decks,
@@ -197,16 +232,16 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
     const std::string& desc, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Deck* deck = decks.at(deckName);
   if (!deck->cards_.contains(cardName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   deck->cards_.at(cardName)->description_ = desc;
-  std::cerr << "Описание установлено для '" << cardName << "'" << "\n";
+  ok("Описание карты '" + cardName + "' установлено");
 }
 
 void gordejchik::cmdRange(DeckStore& decks,
@@ -216,34 +251,21 @@ void gordejchik::cmdRange(DeckStore& decks,
     const std::string& maxStr, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   if (stat != "power" && stat != "cost") {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   int minVal = 0;
   int maxVal = 0;
-  try {
-    size_t pos1 = 0;
-    minVal = std::stoi(minStr, &pos1);
-    if (pos1 != minStr.size()) {
-      out << "<INVALID COMMAND>" << "\n";
-      return;
-    }
-    size_t pos2 = 0;
-    maxVal = std::stoi(maxStr, &pos2);
-    if (pos2 != maxStr.size()) {
-      out << "<INVALID COMMAND>" << "\n";
-      return;
-    }
-  } catch (...) {
-    out << "<INVALID COMMAND>" << "\n";
+  if (!parseInt(minStr, minVal) || !parseInt(maxStr, maxVal)) {
+    fail(out);
     return;
   }
   if (minVal > maxVal) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   const Deck* deck = decks.at(deckName);
@@ -267,6 +289,7 @@ void gordejchik::cmdRange(DeckStore& decks,
   );
   if (found == 0) {
     delete[] names;
+    ok("Найдено карт: 0");
     return;
   }
   std::sort(names, names + found);
@@ -276,6 +299,7 @@ void gordejchik::cmdRange(DeckStore& decks,
         << ", COST " << card->cost_ << "\n";
   }
   delete[] names;
+  ok("Найдено карт: " + std::to_string(found));
 }
 
 void gordejchik::cmdOptimize(DeckStore& decks,
@@ -284,23 +308,16 @@ void gordejchik::cmdOptimize(DeckStore& decks,
     const std::string& newDeckName, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   if (!newDeckName.empty() && decks.contains(newDeckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   int budget = 0;
-  try {
-    size_t pos = 0;
-    budget = std::stoi(budgetStr, &pos);
-    if (pos != budgetStr.size() || budget < 0) {
-      out << "<INVALID COMMAND>" << "\n";
-      return;
-    }
-  } catch (...) {
-    out << "<INVALID COMMAND>" << "\n";
+  if (!parseInt(budgetStr, budget) || budget < 0) {
+    fail(out);
     return;
   }
   Deck* deck = decks.at(deckName);
@@ -331,6 +348,7 @@ void gordejchik::cmdOptimize(DeckStore& decks,
         << ", COST " << card->cost_ << "\n";
   }
   out << "TOTAL POWER: " << res.totalPower_ << "\n";
+  ok("Оптимизация завершена, бюджет: " + budgetStr);
   if (!newDeckName.empty()) {
     Deck* newDeck = new Deck(newDeckName);
     for (size_t i = 0; i < res.count_; ++i) {
@@ -352,19 +370,12 @@ void gordejchik::cmdBattle(DeckStore& decks,
 {
   if (!decks.contains(deck1Name)
       || !decks.contains(deck2Name)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   int budget = 0;
-  try {
-    size_t pos = 0;
-    budget = std::stoi(budgetStr, &pos);
-    if (pos != budgetStr.size() || budget < 0) {
-      out << "<INVALID COMMAND>" << "\n";
-      return;
-    }
-  } catch (...) {
-    out << "<INVALID COMMAND>" << "\n";
+  if (!parseInt(budgetStr, budget) || budget < 0) {
+    fail(out);
     return;
   }
   Deck* deck1 = decks.at(deck1Name);
@@ -436,6 +447,7 @@ void gordejchik::cmdBattle(DeckStore& decks,
   } else {
     out << "DRAW" << "\n";
   }
+  ok("Битва окончена");
   freeBackpackResult(res1);
   freeBackpackResult(res2);
 }
@@ -446,11 +458,11 @@ void gordejchik::cmdMerge(DeckStore& decks,
     const std::string& name2, std::ostream& out)
 {
   if (!decks.contains(name1) || !decks.contains(name2)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   if (decks.contains(newName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Deck* d1 = decks.at(name1);
@@ -475,7 +487,7 @@ void gordejchik::cmdMerge(DeckStore& decks,
     }
   );
   decks.insert(newName, merged);
-  std::cerr << "Колоды соединены в '" << newName << "'" << "\n";
+  ok("Колоды объединены в '" + newName + "'");
 }
 
 void gordejchik::cmdSave(DeckStore& decks,
@@ -483,13 +495,13 @@ void gordejchik::cmdSave(DeckStore& decks,
     const std::string& filename, std::ostream& out)
 {
   if (!decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   Deck* deck = decks.at(deckName);
   std::ofstream file(filename);
   if (!file.is_open()) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   const size_t count = deck->cards_.size();
@@ -504,7 +516,7 @@ void gordejchik::cmdSave(DeckStore& decks,
       file << card->description_ << "\n";
     }
   );
-  std::cerr << "Колода сохранена в '" << filename << "'" << "\n";
+  ok("Колода сохранена в '" + filename + "'");
 }
 
 void gordejchik::cmdLoad(DeckStore& decks,
@@ -512,17 +524,17 @@ void gordejchik::cmdLoad(DeckStore& decks,
     const std::string& filename, std::ostream& out)
 {
   if (decks.contains(deckName)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   std::ifstream file(filename);
   if (!file.is_open()) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   size_t count = 0;
   if (!(file >> count)) {
-    out << "<INVALID COMMAND>" << "\n";
+    fail(out);
     return;
   }
   file.ignore();
@@ -531,19 +543,19 @@ void gordejchik::cmdLoad(DeckStore& decks,
     std::string header;
     if (!std::getline(file, header)) {
       delete deck;
-      out << "<INVALID COMMAND>" << "\n";
+      fail(out);
       return;
     }
     size_t space1 = header.find(' ');
     if (space1 == std::string::npos) {
       delete deck;
-      out << "<INVALID COMMAND>" << "\n";
+      fail(out);
       return;
     }
     size_t space2 = header.find(' ', space1 + 1);
     if (space2 == std::string::npos) {
       delete deck;
-      out << "<INVALID COMMAND>" << "\n";
+      fail(out);
       return;
     }
     std::string cardName = header.substr(0, space1);
@@ -552,24 +564,10 @@ void gordejchik::cmdLoad(DeckStore& decks,
     std::string costStr = header.substr(space2 + 1);
     int power = 0;
     int cost = 0;
-    try {
-      size_t ppos = 0;
-      power = std::stoi(powerStr, &ppos);
-      if (ppos != powerStr.size()) {
-        delete deck;
-        out << "<INVALID COMMAND>" << "\n";
-        return;
-      }
-      size_t cpos = 0;
-      cost = std::stoi(costStr, &cpos);
-      if (cpos != costStr.size()) {
-        delete deck;
-        out << "<INVALID COMMAND>" << "\n";
-        return;
-      }
-    } catch (...) {
+    if (!parseInt(powerStr, power)
+        || !parseInt(costStr, cost)) {
       delete deck;
-      out << "<INVALID COMMAND>" << "\n";
+      fail(out);
       return;
     }
     std::string type;
@@ -577,12 +575,12 @@ void gordejchik::cmdLoad(DeckStore& decks,
     if (!std::getline(file, type)
         || !std::getline(file, desc)) {
       delete deck;
-      out << "<INVALID COMMAND>" << "\n";
+      fail(out);
       return;
     }
     Card* card = new Card{cardName, power, cost, type, desc};
     deck->cards_.insert(cardName, card);
-    std::cerr << "Колода загружена из '" << filename << "'" << "\n";
   }
   decks.insert(deckName, deck);
+  ok("Колода загружена из '" + filename + "'");
 }

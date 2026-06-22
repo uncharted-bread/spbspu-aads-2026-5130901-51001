@@ -3,6 +3,9 @@
 #include <iostream>
 #include <string>
 
+static const char* RED = "\033[31m";
+static const char* RESET = "\033[0m";
+
 int main()
 {
   std::cerr << "Добро пожжаловать АиСД-Stone! Введите help для списка команд." << "\n";
@@ -51,6 +54,7 @@ int main()
       gordejchik::cmdLoad(decks, cmd.tokens_[1], cmd.tokens_[2], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
+      std::cerr << RED << ">> Ошибка: неверная команда" << RESET << "\n";
     }
   }
   decks.forEach(
