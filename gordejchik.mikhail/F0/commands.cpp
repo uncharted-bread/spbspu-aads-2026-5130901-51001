@@ -539,11 +539,26 @@ void gordejchik::cmdLoad(DeckStore& decks,
       return;
     }
     std::string cardName = header.substr(0, space1);
+    std::string powerStr = header.substr(space1 + 1,
+        space2 - space1 - 1);
+    std::string costStr = header.substr(space2 + 1);
     int power = 0;
     int cost = 0;
     try {
-      power = std::stoi(header.substr(space1 + 1));
-      cost = std::stoi(header.substr(space2 + 1));
+      size_t ppos = 0;
+      power = std::stoi(powerStr, &ppos);
+      if (ppos != powerStr.size()) {
+        delete deck;
+        out << "<INVALID COMMAND>" << "\n";
+        return;
+      }
+      size_t cpos = 0;
+      cost = std::stoi(costStr, &cpos);
+      if (cpos != costStr.size()) {
+        delete deck;
+        out << "<INVALID COMMAND>" << "\n";
+        return;
+      }
     } catch (...) {
       delete deck;
       out << "<INVALID COMMAND>" << "\n";
