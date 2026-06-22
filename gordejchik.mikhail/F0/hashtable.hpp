@@ -31,6 +31,9 @@ namespace gordejchik {
     bool empty() const;
     size_t capacity() const;
 
+    template< class F >
+    F forEach(F func) const;
+
   private:
     static const size_t DEFAULT_CAPACITY = 16;
     static const size_t GROW_FACTOR = 2;
@@ -303,6 +306,18 @@ namespace gordejchik {
       ++psl;
       idx = (idx + 1) % cap;
     }
+  }
+  template< class Key, class Value, class Hash, class Equal >
+  template< class F >
+  F HashTable< Key, Value, Hash, Equal >::forEach(
+      F func) const
+  {
+    for (size_t i = 0; i < capacity_; ++i) {
+      if (slots_[i].occupied_) {
+        func(slots_[i].key_, slots_[i].value_);
+      }
+    }
+    return func;
   }
 }
 
