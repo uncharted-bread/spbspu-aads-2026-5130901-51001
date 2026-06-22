@@ -36,6 +36,10 @@ int main()
       gordejchik::cmdSetDesc(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], std::cout);
     } else if (name == "range" && cmd.count_ == 5) {
       gordejchik::cmdRange(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], cmd.tokens_[4], std::cout);
+    } else if (name == "optimize" && cmd.count_ == 3) {
+      gordejchik::cmdOptimize(decks, cmd.tokens_[1], cmd.tokens_[2], "", std::cout);
+    } else if (name == "optimize" && cmd.count_ == 4) {
+      gordejchik::cmdOptimize(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }

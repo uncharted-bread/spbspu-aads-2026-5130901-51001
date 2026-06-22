@@ -1,4 +1,5 @@
 #include "commands.hpp"
+#include "backpack.hpp"
 #include <algorithm>
 
 void gordejchik::cmdCreate(DeckStore& decks,
@@ -269,3 +270,71 @@ void gordejchik::cmdRange(DeckStore& decks,
   }
   delete[] names;
 }
+
+void gordejchik::cmdOptimize(DeckStore& decks,
+    const std::string& deckName,
+    const std::string& budgetStr,
+    const std::string& newDeckName, std::ostream& out)
+{
+  if (!decks.contains(deckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  if (!newDeckName.empty() && decks.contains(newDeckName)) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  int budget = 0;
+  try {
+    size_t pos = 0;
+    budget = std::stoi(budgetStr, &pos);
+    if (pos != budgetStr.size() || budget < 0) {
+      out << "<INVALID COMMAND>" << "\n";
+      return;
+    }
+  } catch (...) {
+    out << "<INVALID COMMAND>" << "\n";
+    return;
+  }
+  Deck* deck = decks.at(deckName);
+  const size_t count = deck->cards_.size();
+  if (count == 0) {
+    out << "TOTAL POWER: 0" << "\n";
+    return;
+  }
+  Card** allCards = new Card*[count];
+  size_t idx = 0;
+  deck->cards_.forEach(
+    [&allCards, &idx](const std::string&, Card* card)
+    {
+      allCards[idx] = card;
+      ++idx;
+    }
+  );
+  BackpackResult res = solveBackpack(allCards, count, budget);
+  delete[] allCards;
+  std::string* names = new std::string[res.count_];
+  for (size_t i = 0; i < res.count_; ++i) {
+    names[i] = res.cards_[i]->name_;
+  }
+  std::sort(names, names + res.count_);
+  for (size_t i = 0; i < res.count_; ++i) {
+    Card* card = deck->cards_.at(names[i]);
+    out << names[i] << ": POWER " << card->power_
+        << ", COST " << card->cost_ << "\n";
+  }
+  out << "TOTAL POWER: " << res.totalPower_ << "\n";
+  if (!newDeckName.empty()) {
+    Deck* newDeck = new Deck(newDeckName);
+    for (size_t i = 0; i < res.count_; ++i) {
+      Card* src = deck->cards_.at(names[i]);
+      Card* copy = new Card{src->name_, src->power_,
+          src->cost_, src->type_, src->description_};
+      newDeck->cards_.insert(copy->name_, copy);
+    }
+    decks.insert(newDeckName, newDeck);
+  }
+  delete[] names;
+  freeBackpackResult(res);
+}
+
