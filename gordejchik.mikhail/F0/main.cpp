@@ -32,6 +32,8 @@ int main()
       gordejchik::cmdInfo(decks, cmd.tokens_[1], cmd.tokens_[2], std::cout);
     } else if (name == "set-type" && cmd.count_ == 4) {
       gordejchik::cmdSetType(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], std::cout);
+    } else if (name == "set-desc" && cmd.count_ == 4) {
+      gordejchik::cmdSetDesc(decks, cmd.tokens_[1], cmd.tokens_[2], cmd.tokens_[3], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }
