@@ -78,4 +78,24 @@ BOOST_AUTO_TEST_CASE(rehashPreservesData)
   BOOST_TEST(ht.at(4) == 40);
 }
 
+BOOST_AUTO_TEST_CASE(manyInsertionsAndDeletions)
+{
+  HashTable< int, int > ht;
+  const int count = 200;
+  for (int i = 0; i < count; ++i) {
+    ht.insert(i, i * 10);
+  }
+  BOOST_TEST(ht.size() == 200u);
+
+  for (int i = 0; i < count; i += 2) {
+    ht.erase(i);
+  }
+  BOOST_TEST(ht.size() == 100u);
+
+  for (int i = 1; i < count; i += 2) {
+    BOOST_TEST(ht.contains(i));
+    BOOST_TEST(ht.at(i) == i * 10);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
