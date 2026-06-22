@@ -11,6 +11,7 @@ void gordejchik::cmdCreate(DeckStore& decks,
     return;
   }
   decks.insert(name, new Deck(name));
+  std::cerr << "Колода '" << name << "' создана" << "\n";
 }
 
 void gordejchik::cmdDelete(DeckStore& decks,
@@ -23,6 +24,7 @@ void gordejchik::cmdDelete(DeckStore& decks,
   Deck* deck = decks.at(name);
   decks.erase(name);
   delete deck;
+  std::cerr << "Колода '" << name << "' удалена" << "\n";
 }
 
 void gordejchik::cmdHelp(std::ostream& out)
@@ -80,6 +82,7 @@ void gordejchik::cmdAdd(DeckStore& decks,
   }
   Card* card = new Card{cardName, power, cost, "", ""};
   deck->cards_.insert(cardName, card);
+  std::cerr << "Карта '" << cardName << "' добавлена" << "\n";
 }
 
 void gordejchik::cmdRemove(DeckStore& decks,
@@ -98,6 +101,7 @@ void gordejchik::cmdRemove(DeckStore& decks,
   Card* card = deck->cards_.at(cardName);
   deck->cards_.erase(cardName);
   delete card;
+  std::cerr << "Карта '" << cardName << "' удалена" << "\n";
 }
 
 void gordejchik::cmdShow(DeckStore& decks,
@@ -184,6 +188,7 @@ void gordejchik::cmdSetType(DeckStore& decks,
     return;
   }
   deck->cards_.at(cardName)->type_ = type;
+  std::cerr << "Тип установлен для '" << cardName << "'" << "\n";
 }
 
 void gordejchik::cmdSetDesc(DeckStore& decks,
@@ -201,6 +206,7 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
     return;
   }
   deck->cards_.at(cardName)->description_ = desc;
+  std::cerr << "Описание установлено для '" << cardName << "'" << "\n";
 }
 
 void gordejchik::cmdRange(DeckStore& decks,
@@ -469,6 +475,7 @@ void gordejchik::cmdMerge(DeckStore& decks,
     }
   );
   decks.insert(newName, merged);
+  std::cerr << "Колоды соединены в '" << newName << "'" << "\n";
 }
 
 void gordejchik::cmdSave(DeckStore& decks,
@@ -497,6 +504,7 @@ void gordejchik::cmdSave(DeckStore& decks,
       file << card->description_ << "\n";
     }
   );
+  std::cerr << "Колода сохранена в '" << filename << "'" << "\n";
 }
 
 void gordejchik::cmdLoad(DeckStore& decks,
@@ -574,6 +582,7 @@ void gordejchik::cmdLoad(DeckStore& decks,
     }
     Card* card = new Card{cardName, power, cost, type, desc};
     deck->cards_.insert(cardName, card);
+    std::cerr << "Колода загружена из '" << filename << "'" << "\n";
   }
   decks.insert(deckName, deck);
 }

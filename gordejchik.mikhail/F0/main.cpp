@@ -5,6 +5,7 @@
 
 int main()
 {
+  std::cerr << "Добро пожжаловать АиСД-Stone! Введите help для списка команд." << "\n";
   gordejchik::DeckStore decks;
   std::string line;
   while (std::getline(std::cin, line)) {
@@ -47,7 +48,7 @@ int main()
     } else if (name == "save" && cmd.count_ == 3) {
       gordejchik::cmdSave(decks, cmd.tokens_[1], cmd.tokens_[2], std::cout);
     } else if (name == "load" && cmd.count_ == 3) {
-      gordejchik::cmdLoad(decks, cmd.tokens_[1], cmd.tokens_[2], std::cout);      
+      gordejchik::cmdLoad(decks, cmd.tokens_[1], cmd.tokens_[2], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
     }
