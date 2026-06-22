@@ -123,4 +123,21 @@ BOOST_AUTO_TEST_CASE(moveConstructor)
   BOOST_TEST(ht.size() == 0u);
 }
 
+BOOST_AUTO_TEST_CASE(forEachTraversal)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("a", 1);
+  ht.insert("b", 2);
+  ht.insert("c", 3);
+
+  int sum = 0;
+  ht.forEach(
+    [&sum](const std::string&, int val)
+    {
+      sum += val;
+    }
+  );
+  BOOST_TEST(sum == 6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
