@@ -6,19 +6,17 @@
 
 static const char* GREEN = "\033[32m";
 static const char* RED = "\033[31m";
-static const char* YELLOW = "\033[33m";
-static const char* DIM = "\033[2m";
 static const char* RESET = "\033[0m";
 
 static void ok(const std::string& msg)
 {
-  std::cerr << GREEN << "  ✓ " << msg << RESET << "\n";
+  std::cerr << GREEN << "  [OK] " << msg << RESET << "\n";
 }
 
 static void fail(std::ostream& out)
 {
   out << "<INVALID COMMAND>" << "\n";
-  std::cerr << RED << "  ✗ Ошибка: неверная команда" << RESET << "\n";
+  std::cerr << RED << " [ERR] Ошибка: неверная команда" << RESET << "\n";
 }
 
 static bool parseInt(const std::string& str, int& result)
