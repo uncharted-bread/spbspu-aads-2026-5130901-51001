@@ -124,6 +124,63 @@ static gordejchik::Queue< std::string > infixToPostfix(
   return output;
 }
 
+static long long applyBinary(long long left, long long right,
+    const std::string& op)
+{
+  if (op == "+") {
+    return left + right;
+  }
+  if (op == "-") {
+    return left - right;
+  }
+  if (op == "*") {
+    return left * right;
+  }
+  if (op == "/") {
+    if (right == 0) {
+      throw std::invalid_argument("Деление на 0");
+    }
+    return left / right;
+  }
+  if (op == "%") {
+    if (right == 0) {
+      throw std::invalid_argument("Взятие остатка от деления на 0");
+    }
+    return left % right;
+  }
+  throw std::invalid_argument("Неизвестный оператор " + op);
+}
+
+static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
+{
+  gordejchik::Stack< long long > operands;
+
+  while (!postfix.empty()) {
+    const std::string token = postfix.front();
+    postfix.pop();
+
+    if (isNumber(token)) {
+      operands.push(std::stoll(token));
+    } else if (isBinaryOp(token)) {
+      if (operands.size() < 2) {
+        throw std::invalid_argument("Недостаточно опрерандов");
+      }
+      long long right = operands.top();
+      operands.pop();
+      long long left = operands.top();
+      operands.pop();
+      operands.push(applyBinary(left, right, token));
+    } else {
+      throw std::invalid_argument("Неверный токен постфикса: " + token);
+    }
+  }
+
+  if (operands.size() != 1) {
+    throw std::invalid_argument("Неверное выражение");
+  }
+  return operands.top();
+}
+
 long long gordejchik::calculateExpression(const std::string& line)
 {
   gordejchik::Queue< std::string > tokens = tokenize(line);
@@ -131,6 +188,5 @@ long long gordejchik::calculateExpression(const std::string& line)
     throw std::invalid_argument("Пустое выражение");
   }
   gordejchik::Queue< std::string > postfix = infixToPostfix(tokens);
-  (void)postfix;
-  throw std::logic_error("Evaluation not yet implemented");
+  return evaluatePostfix(postfix);
 }
