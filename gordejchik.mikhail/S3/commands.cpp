@@ -191,3 +191,95 @@ void gordejchik::cmdInbound(const std::string& args,
   }
   printEdgeInfo(g, vertex, false, out);
 }
+
+void gordejchik::cmdBind(const std::string& args,
+    std::ostream& out, GraphCollection& graphs)
+{
+  size_t pos = 0;
+  std::string graphName = extractWord(args, pos);
+  std::string from = extractWord(args, pos);
+  std::string to = extractWord(args, pos);
+  if (graphName.empty() || from.empty() || to.empty()
+      || !graphs.contains(graphName)) {
+    printInvalid(out);
+    return;
+  }
+  std::string wStr = extractWord(args, pos);
+  if (wStr.empty()) {
+    printInvalid(out);
+    return;
+  }
+  size_t weight = 0;
+  try {
+    weight = std::stoul(wStr);
+  } catch (...) {
+    printInvalid(out);
+    return;
+  }
+  graphs.at(graphName).addEdge(from, to, weight);
+}
+
+void gordejchik::cmdCut(const std::string& args,
+    std::ostream& out, GraphCollection& graphs)
+{
+  size_t pos = 0;
+  std::string graphName = extractWord(args, pos);
+  std::string from = extractWord(args, pos);
+  std::string to = extractWord(args, pos);
+  if (graphName.empty() || from.empty() || to.empty()
+      || !graphs.contains(graphName)) {
+    printInvalid(out);
+    return;
+  }
+  std::string wStr = extractWord(args, pos);
+  if (wStr.empty()) {
+    printInvalid(out);
+    return;
+  }
+  size_t weight = 0;
+  try {
+    weight = std::stoul(wStr);
+  } catch (...) {
+    printInvalid(out);
+    return;
+  }
+  Graph& g = graphs.at(graphName);
+  if (!g.hasVertex(from) || !g.hasVertex(to)) {
+    printInvalid(out);
+    return;
+  }
+  if (!g.removeEdge(from, to, weight)) {
+    printInvalid(out);
+  }
+}
+
+void gordejchik::cmdCreate(const std::string& args,
+    std::ostream& out, GraphCollection& graphs)
+{
+  size_t pos = 0;
+  std::string name = extractWord(args, pos);
+  if (name.empty() || graphs.contains(name)) {
+    printInvalid(out);
+    return;
+  }
+  Graph g;
+  std::string countStr = extractWord(args, pos);
+  if (!countStr.empty()) {
+    size_t count = 0;
+    try {
+      count = std::stoul(countStr);
+    } catch (...) {
+      printInvalid(out);
+      return;
+    }
+    for (size_t i = 0; i < count; ++i) {
+      std::string v = extractWord(args, pos);
+      if (v.empty()) {
+        printInvalid(out);
+        return;
+      }
+      g.addVertex(v);
+    }
+  }
+  safeInsert(graphs, name, g);
+}
