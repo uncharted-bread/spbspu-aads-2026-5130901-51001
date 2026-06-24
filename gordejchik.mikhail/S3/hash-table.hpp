@@ -20,6 +20,10 @@ namespace gordejchik {
               const Hash& hash = Hash(),
               const Equal& equal = Equal());
     ~HashTable();
+    HashTable(const HashTable& other);
+    HashTable& operator=(const HashTable& other);
+    HashTable(HashTable&& other);
+    HashTable& operator=(HashTable&& other);
 
     void insert(const Key& key, const Value& value);
     Value& at(const Key& key);
@@ -33,6 +37,15 @@ namespace gordejchik {
     size_t bucketCount() const;
     size_t getBucketSize() const;
     void clear();
+    void rehash(size_t newBucketCount);
+    void swap(HashTable& other);
+
+    Iterator begin();
+    Iterator end();
+    ConstIterator begin() const;
+    ConstIterator end() const;
+    ConstIterator cbegin() const;
+    ConstIterator cend() const;
 
   private:
     struct Entry {
@@ -52,6 +65,49 @@ namespace gordejchik {
     size_t spareStart() const;
     Entry* findEntry(const Key& key);
     const Entry* findEntry(const Key& key) const;
+  };
+
+  template< class Key, class Value, class Hash, class Equal >
+  class HashTable< Key, Value, Hash, Equal >::Iterator {
+    friend class HashTable;
+  public:
+    using value_type = std::pair< Key, Value >;
+
+    value_type& operator*();
+    value_type* operator->();
+    Iterator& operator++();
+    Iterator operator++(int);
+    bool operator==(const Iterator& rhs) const;
+    bool operator!=(const Iterator& rhs) const;
+
+  private:
+    Entry* current_;
+    Entry* end_;
+
+    Iterator(Entry* current, Entry* end);
+    void skipEmpty();
+  };
+
+  template< class Key, class Value, class Hash, class Equal >
+  class HashTable< Key, Value, Hash, Equal >::ConstIterator {
+    friend class HashTable;
+  public:
+    using value_type = std::pair< Key, Value >;
+
+    ConstIterator(const Iterator& it);
+    const value_type& operator*() const;
+    const value_type* operator->() const;
+    ConstIterator& operator++();
+    ConstIterator operator++(int);
+    bool operator==(const ConstIterator& rhs) const;
+    bool operator!=(const ConstIterator& rhs) const;
+
+  private:
+    const Entry* current_;
+    const Entry* end_;
+
+    ConstIterator(const Entry* current, const Entry* end);
+    void skipEmpty();
   };
 
   template< class Key, class Value, class Hash, class Equal >
@@ -75,6 +131,77 @@ namespace gordejchik {
   gordejchik::HashTable< Key, Value, Hash, Equal >::~HashTable()
   {
     delete[] data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  gordejchik::HashTable< Key, Value, Hash, Equal >::HashTable(const HashTable& other):
+    data_(nullptr),
+    numBuckets_(other.numBuckets_),
+    bucketSize_(other.bucketSize_),
+    size_(other.size_),
+    hash_(other.hash_),
+    equal_(other.equal_)
+  {
+    const size_t cap = totalCapacity();
+    data_ = new Entry[cap]();
+    for (size_t i = 0; i < cap; ++i) {
+      data_[i] = other.data_[i];
+    }
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  gordejchik::HashTable< Key, Value, Hash, Equal >&
+  gordejchik::HashTable< Key, Value, Hash, Equal >::operator=(const HashTable& other)
+  {
+    if (this != &other) {
+      HashTable temp(other);
+      swap(temp);
+    }
+    return *this;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  gordejchik::HashTable< Key, Value, Hash, Equal >::HashTable(HashTable&& other):
+    data_(other.data_),
+    numBuckets_(other.numBuckets_),
+    bucketSize_(other.bucketSize_),
+    size_(other.size_),
+    hash_(other.hash_),
+    equal_(other.equal_)
+  {
+    other.data_ = nullptr;
+    other.size_ = 0;
+    other.numBuckets_ = 0;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  gordejchik::HashTable< Key, Value, Hash, Equal >&
+  gordejchik::HashTable< Key, Value, Hash, Equal >::operator=(HashTable&& other)
+  {
+    if (this != &other) {
+      swap(other);
+    }
+    return *this;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::swap(HashTable& other)
+  {
+    Entry* tmpData = data_;
+    data_ = other.data_;
+    other.data_ = tmpData;
+
+    size_t tmp = numBuckets_;
+    numBuckets_ = other.numBuckets_;
+    other.numBuckets_ = tmp;
+
+    tmp = bucketSize_;
+    bucketSize_ = other.bucketSize_;
+    other.bucketSize_ = tmp;
+
+    tmp = size_;
+    size_ = other.size_;
+    other.size_ = tmp;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -246,6 +373,195 @@ namespace gordejchik {
       }
     }
     size_ = 0;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::rehash(size_t newBucketCount)
+  {
+    HashTable temp(newBucketCount, bucketSize_, hash_, equal_);
+    for (size_t i = 0; i < totalCapacity(); ++i) {
+      if (data_[i].occupied_) {
+        temp.insert(data_[i].data_.first, data_[i].data_.second);
+      }
+    }
+    swap(temp);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::Iterator(
+      Entry* current, Entry* end):
+    current_(current),
+    end_(end)
+  {}
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::skipEmpty()
+  {
+    while (current_ != end_ && !current_->occupied_) {
+      ++current_;
+    }
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type&
+  gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator*()
+  {
+    return current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type*
+  gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator->()
+  {
+    return &current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator&
+  gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator++()
+  {
+    ++current_;
+    skipEmpty();
+    return *this;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator++(int)
+  {
+    Iterator tmp = *this;
+    ++(*this);
+    return tmp;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator==(
+      const Iterator& rhs) const
+  {
+    return current_ == rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator!=(
+      const Iterator& rhs) const
+  {
+    return current_ != rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::ConstIterator(
+      const Entry* current, const Entry* end):
+    current_(current),
+    end_(end)
+  {}
+
+  template< class Key, class Value, class Hash, class Equal >
+  gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::ConstIterator(
+      const Iterator& it):
+    current_(it.current_),
+    end_(it.end_)
+  {}
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::skipEmpty()
+  {
+    while (current_ != end_ && !current_->occupied_) {
+      ++current_;
+    }
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  const typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type&
+  gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator*() const
+  {
+    return current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  const typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type*
+  gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator->() const
+  {
+    return &current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator&
+  gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator++()
+  {
+    ++current_;
+    skipEmpty();
+    return *this;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator++(int)
+  {
+    ConstIterator tmp = *this;
+    ++(*this);
+    return tmp;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator==(
+      const ConstIterator& rhs) const
+  {
+    return current_ == rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator!=(
+      const ConstIterator& rhs) const
+  {
+    return current_ != rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::begin()
+  {
+    Iterator it(data_, data_ + totalCapacity());
+    it.skipEmpty();
+    return it;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::end()
+  {
+    Entry* e = data_ + totalCapacity();
+    return Iterator(e, e);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::begin() const
+  {
+    ConstIterator it(data_, data_ + totalCapacity());
+    it.skipEmpty();
+    return it;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::end() const
+  {
+    const Entry* e = data_ + totalCapacity();
+    return ConstIterator(e, e);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::cbegin() const
+  {
+    return begin();
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator
+  gordejchik::HashTable< Key, Value, Hash, Equal >::cend() const
+  {
+    return end();
   }
 }
 
