@@ -62,6 +62,71 @@ namespace gordejchik {
       size_ = 0;
     }
 
+    void push(const Key& k, const Value& v)
+    {
+      if (!root_) {
+        root_ = new Node_(k, v, nullptr);
+        ++size_;
+        return;
+      }
+      Node_* cur = root_;
+      while (cur) {
+        if (cmp_(k, cur->data_.first)) {
+          if (cur->left_) {
+            cur = cur->left_;
+          } else {
+            cur->left_ = new Node_(k, v, cur);
+            ++size_;
+            return;
+          }
+        } else if (cmp_(cur->data_.first, k)) {
+          if (cur->right_) {
+            cur = cur->right_;
+          } else {
+            cur->right_ = new Node_(k, v, cur);
+            ++size_;
+            return;
+          }
+        } else {
+          cur->data_.second = v;
+          return;
+        }
+      }
+    }
+
+    const Value& get(const Key& k) const
+    {
+      const Node_* node = findNode(k);
+      if (!node) {
+        throw std::out_of_range("BSTree: ключ не найден");
+      }
+      return node->data_.second;
+    }
+
+    Value& get(const Key& k)
+    {
+      Node_* node = findNode(k);
+      if (!node) {
+        throw std::out_of_range("BSTree: ключ не найден");
+      }
+      return node->data_.second;
+    }
+
+    bool contains(const Key& k) const
+    {
+      return findNode(k) != nullptr;
+    }
+
+    Value& operator[](const Key& k)
+    {
+      Node_* node = findNode(k);
+      if (node) {
+        return node->data_.second;
+      }
+      push(k, Value());
+      return findNode(k)->data_.second;
+    }
+
   private:
     using Node_ = detail::BSTNode< Key, Value >;
 
@@ -77,6 +142,21 @@ namespace gordejchik {
       freeSubtree(node->left_);
       freeSubtree(node->right_);
       delete node;
+    }
+
+    Node_* findNode(const Key& k) const
+    {
+      Node_* cur = root_;
+      while (cur) {
+        if (cmp_(k, cur->data_.first)) {
+          cur = cur->left_;
+        } else if (cmp_(cur->data_.first, k)) {
+          cur = cur->right_;
+        } else {
+          return cur;
+        }
+      }
+      return nullptr;
     }
 
     template< class K, class V >
