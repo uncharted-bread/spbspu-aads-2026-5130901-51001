@@ -5,6 +5,7 @@
 #include <utility>
 #include <functional>
 #include <stdexcept>
+#include <iterator>
 
 namespace gordejchik {
   namespace detail {
@@ -22,10 +23,223 @@ namespace gordejchik {
         parent_(parent)
       {}
     };
+
+    template< class Key, class Value >
+    BSTNode< Key, Value >* leftmost(BSTNode< Key, Value >* node)
+    {
+      if (!node) {
+        return nullptr;
+      }
+      while (node->left_) {
+        node = node->left_;
+      }
+      return node;
+    }
+
+    template< class Key, class Value >
+    BSTNode< Key, Value >* rightmost(BSTNode< Key, Value >* node)
+    {
+      if (!node) {
+        return nullptr;
+      }
+      while (node->right_) {
+        node = node->right_;
+      }
+      return node;
+    }
+
+    template< class Key, class Value >
+    BSTNode< Key, Value >* nextInOrder(BSTNode< Key, Value >* node)
+    {
+      if (node->right_) {
+        return leftmost< Key, Value >(node->right_);
+      }
+      BSTNode< Key, Value >* parent = node->parent_;
+      while (parent && node == parent->right_) {
+        node = parent;
+        parent = parent->parent_;
+      }
+      return parent;
+    }
+
+    template< class Key, class Value >
+    BSTNode< Key, Value >* prevInOrder(BSTNode< Key, Value >* node)
+    {
+      if (node->left_) {
+        return rightmost< Key, Value >(node->left_);
+      }
+      BSTNode< Key, Value >* parent = node->parent_;
+      while (parent && node == parent->left_) {
+        node = parent;
+        parent = parent->parent_;
+      }
+      return parent;
+    }
   }
 
-  template< class Key, class Value > class BSTIterator;
   template< class Key, class Value > class BSTConstIterator;
+
+  template< class Key, class Value >
+  class BSTIterator {
+    template< class K, class V, class C >
+    friend class BSTree;
+    friend class BSTConstIterator< Key, Value >;
+
+  public:
+    using Node_ = detail::BSTNode< Key, Value >;
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = std::pair< Key, Value >;
+    using difference_type = std::ptrdiff_t;
+    using pointer = value_type*;
+    using reference = value_type&;
+
+    BSTIterator():
+      node_(nullptr),
+      rootAddr_(nullptr)
+    {}
+
+    reference operator*() const
+    {
+      return node_->data_;
+    }
+
+    pointer operator->() const
+    {
+      return &node_->data_;
+    }
+
+    BSTIterator& operator++()
+    {
+      node_ = detail::nextInOrder< Key, Value >(node_);
+      return *this;
+    }
+
+    BSTIterator operator++(int)
+    {
+      BSTIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    BSTIterator& operator--()
+    {
+      if (!node_) {
+        node_ = detail::rightmost< Key, Value >(*rootAddr_);
+      } else {
+        node_ = detail::prevInOrder< Key, Value >(node_);
+      }
+      return *this;
+    }
+
+    BSTIterator operator--(int)
+    {
+      BSTIterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+
+    bool operator==(const BSTIterator& rhs) const
+    {
+      return node_ == rhs.node_;
+    }
+
+    bool operator!=(const BSTIterator& rhs) const
+    {
+      return node_ != rhs.node_;
+    }
+
+  private:
+    Node_* node_;
+    Node_** rootAddr_;
+
+    BSTIterator(Node_* node, Node_** rootAddr):
+      node_(node),
+      rootAddr_(rootAddr)
+    {}
+  };
+
+  template< class Key, class Value >
+  class BSTConstIterator {
+    template< class K, class V, class C >
+    friend class BSTree;
+
+  public:
+    using Node_ = detail::BSTNode< Key, Value >;
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = std::pair< Key, Value >;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const value_type*;
+    using reference = const value_type&;
+
+    BSTConstIterator():
+      node_(nullptr),
+      rootAddr_(nullptr)
+    {}
+
+    BSTConstIterator(const BSTIterator< Key, Value >& other):
+      node_(other.node_),
+      rootAddr_(other.rootAddr_)
+    {}
+
+    reference operator*() const
+    {
+      return node_->data_;
+    }
+
+    pointer operator->() const
+    {
+      return &node_->data_;
+    }
+
+    BSTConstIterator& operator++()
+    {
+      node_ = detail::nextInOrder< Key, Value >(node_);
+      return *this;
+    }
+
+    BSTConstIterator operator++(int)
+    {
+      BSTConstIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    BSTConstIterator& operator--()
+    {
+      if (!node_) {
+        node_ = detail::rightmost< Key, Value >(*rootAddr_);
+      } else {
+        node_ = detail::prevInOrder< Key, Value >(node_);
+      }
+      return *this;
+    }
+
+    BSTConstIterator operator--(int)
+    {
+      BSTConstIterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+
+    bool operator==(const BSTConstIterator& rhs) const
+    {
+      return node_ == rhs.node_;
+    }
+
+    bool operator!=(const BSTConstIterator& rhs) const
+    {
+      return node_ != rhs.node_;
+    }
+
+  private:
+    Node_* node_;
+    Node_** rootAddr_;
+
+    BSTConstIterator(Node_* node, Node_** rootAddr):
+      node_(node),
+      rootAddr_(rootAddr)
+    {}
+  };
 
   template< class Key, class Value, class Compare = std::less< Key > >
   class BSTree {
@@ -50,7 +264,7 @@ namespace gordejchik {
       return size_ == 0;
     }
 
-    std::size_t size() const
+    size_t size() const
     {
       return size_;
     }
@@ -127,11 +341,54 @@ namespace gordejchik {
       return findNode(k)->data_.second;
     }
 
+    iterator begin()
+    {
+      return iterator(detail::leftmost< Key, Value >(root_), &root_);
+    }
+
+    iterator end()
+    {
+      return iterator(nullptr, &root_);
+    }
+
+    const_iterator begin() const
+    {
+      return cbegin();
+    }
+
+    const_iterator end() const
+    {
+      return cend();
+    }
+
+    const_iterator cbegin() const
+    {
+      Node_** addr = const_cast< Node_** >(&root_);
+      return const_iterator(detail::leftmost< Key, Value >(root_), addr);
+    }
+
+    const_iterator cend() const
+    {
+      Node_** addr = const_cast< Node_** >(&root_);
+      return const_iterator(nullptr, addr);
+    }
+
+    iterator find(const Key& k)
+    {
+      return iterator(findNode(k), &root_);
+    }
+
+    const_iterator find(const Key& k) const
+    {
+      Node_** addr = const_cast< Node_** >(&root_);
+      return const_iterator(findNode(k), addr);
+    }
+
   private:
     using Node_ = detail::BSTNode< Key, Value >;
 
     Node_* root_;
-    std::size_t size_;
+    size_t size_;
     Compare cmp_;
 
     static void freeSubtree(Node_* node)
