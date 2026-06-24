@@ -13,8 +13,16 @@ static bool isBinaryOp(const std::string& token)
       || (token == "%");
 }
 
+static bool isUnaryOp(const std::string& token)
+{
+  return token == "!";
+}
+
 static int getPrecedence(const std::string& op)
 {
+  if (op == "!") {
+    return 4;
+  }
   if ((op == "*") || (op == "/") || (op == "%")) {
     return 3;
   }
@@ -26,8 +34,7 @@ static int getPrecedence(const std::string& op)
 
 static bool isLeftAssociative(const std::string& op)
 {
-  (void)op;
-  return true;
+  return op != "!";
 }
 
 static bool isNumber(const std::string& token)
@@ -82,7 +89,7 @@ static gordejchik::Queue< std::string > infixToPostfix(
 
     if (isNumber(token)) {
       output.push(token);
-    } else if (isBinaryOp(token)) {
+    } else if (isBinaryOp(token) || isUnaryOp(token)) {
       while (!ops.empty() && (ops.top() != "(")) {
         bool shouldPop = false;
         if (isLeftAssociative(token)) {
@@ -161,6 +168,13 @@ static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
 
     if (isNumber(token)) {
       operands.push(std::stoll(token));
+    } else if (isUnaryOp(token)) {
+      if (operands.empty()) {
+        throw std::invalid_argument("Недостаточно опрерандов for !");
+      }
+      long long val = operands.top();
+      operands.pop();
+      operands.push(~val);
     } else if (isBinaryOp(token)) {
       if (operands.size() < 2) {
         throw std::invalid_argument("Недостаточно опрерандов");
