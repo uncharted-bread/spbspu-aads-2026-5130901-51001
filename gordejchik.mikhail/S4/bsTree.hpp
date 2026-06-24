@@ -384,6 +384,30 @@ namespace gordejchik {
       return const_iterator(findNode(k), addr);
     }
 
+    iterator erase(const_iterator pos)
+    {
+      Node_* node = pos.node_;
+      if (!node) {
+        return end();
+      }
+      Node_* next = detail::nextInOrder< Key, Value >(node);
+      eraseNode(node);
+      --size_;
+      return iterator(next, &root_);
+    }
+
+    Value drop(const Key& k)
+    {
+      Node_* node = findNode(k);
+      if (!node) {
+        throw std::out_of_range("BSTree: ключ не найден");
+      }
+      Value result = node->data_.second;
+      eraseNode(node);
+      --size_;
+      return result;
+    }
+
   private:
     using Node_ = detail::BSTNode< Key, Value >;
 
@@ -414,6 +438,40 @@ namespace gordejchik {
         }
       }
       return nullptr;
+    }
+
+    void transplant(Node_* target, Node_* replacement)
+    {
+      if (!target->parent_) {
+        root_ = replacement;
+      } else if (target == target->parent_->left_) {
+        target->parent_->left_ = replacement;
+      } else {
+        target->parent_->right_ = replacement;
+      }
+      if (replacement) {
+        replacement->parent_ = target->parent_;
+      }
+    }
+
+    void eraseNode(Node_* node)
+    {
+      if (!node->left_) {
+        transplant(node, node->right_);
+      } else if (!node->right_) {
+        transplant(node, node->left_);
+      } else {
+        Node_* successor = detail::leftmost< Key, Value >(node->right_);
+        if (successor->parent_ != node) {
+          transplant(successor, successor->right_);
+          successor->right_ = node->right_;
+          successor->right_->parent_ = successor;
+        }
+        transplant(node, successor);
+        successor->left_ = node->left_;
+        successor->left_->parent_ = successor;
+      }
+      delete node;
     }
 
     template< class K, class V >
