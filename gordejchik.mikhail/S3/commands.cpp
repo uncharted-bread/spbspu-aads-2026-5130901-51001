@@ -44,6 +44,84 @@ static void safeInsert(gordejchik::HashTable< K, V, H, E >& table,
   table.insert(key, val);
 }
 
+struct NeighborInfo {
+  std::string name;
+  size_t* weights;
+  size_t count;
+};
+
+static bool compareNeighbors(const NeighborInfo& a, const NeighborInfo& b)
+{
+  return a.name < b.name;
+}
+
+static void printEdgeInfo(const gordejchik::Graph& g,
+    const std::string& vertex, bool outbound, std::ostream& out)
+{
+  using EdgeCIter = gordejchik::Graph::EdgeTable::ConstIterator;
+  using WCIter = gordejchik::LCIter< size_t >;
+
+  size_t pairCount = 0;
+  for (EdgeCIter it = g.edges().cbegin();
+      it != g.edges().cend(); ++it) {
+    const std::string& check = outbound
+        ? it->first.first
+        : it->first.second;
+    if (check == vertex) {
+      ++pairCount;
+    }
+  }
+  if (pairCount == 0) {
+    return;
+  }
+
+  NeighborInfo* neighbors = new NeighborInfo[pairCount];
+  size_t idx = 0;
+
+  for (EdgeCIter it = g.edges().cbegin();
+      it != g.edges().cend(); ++it) {
+    const std::string& check = outbound
+        ? it->first.first
+        : it->first.second;
+    if (check != vertex) {
+      continue;
+    }
+    const std::string& other = outbound
+        ? it->first.second
+        : it->first.first;
+    const gordejchik::Graph::WeightList& wl = it->second;
+
+    size_t wCount = 0;
+    for (WCIter wit = wl.cbegin(); wit != wl.cend(); ++wit) {
+      ++wCount;
+    }
+
+    size_t* warr = new size_t[wCount];
+    size_t wi = 0;
+    for (WCIter wit = wl.cbegin(); wit != wl.cend(); ++wit) {
+      warr[wi++] = *wit;
+    }
+    std::sort(warr, warr + wCount);
+
+    neighbors[idx].name = other;
+    neighbors[idx].weights = warr;
+    neighbors[idx].count = wCount;
+    ++idx;
+  }
+
+  std::sort(neighbors, neighbors + pairCount, compareNeighbors);
+
+  for (size_t i = 0; i < pairCount; ++i) {
+    out << neighbors[i].name;
+    for (size_t j = 0; j < neighbors[i].count; ++j) {
+      out << " " << neighbors[i].weights[j];
+    }
+    out << "\n";
+    delete[] neighbors[i].weights;
+  }
+  delete[] neighbors;
+}
+
 void gordejchik::cmdGraphs(const std::string&, std::ostream& out,
     GraphCollection& graphs)
 {
@@ -51,9 +129,10 @@ void gordejchik::cmdGraphs(const std::string&, std::ostream& out,
   if (n == 0) {
     return;
   }
+  using CIter = GraphCollection::ConstIterator;
   std::string* names = new std::string[n];
   size_t idx = 0;
-  for (auto it = graphs.cbegin(); it != graphs.cend(); ++it) {
+  for (CIter it = graphs.cbegin(); it != graphs.cend(); ++it) {
     names[idx++] = it->first;
   }
   std::sort(names, names + n);
@@ -77,9 +156,10 @@ void gordejchik::cmdVertexes(const std::string& args,
   if (n == 0) {
     return;
   }
+  using VCIter = Graph::VertexTable::ConstIterator;
   std::string* verts = new std::string[n];
   size_t idx = 0;
-  for (auto it = g.vertices().cbegin();
+  for (VCIter it = g.vertices().cbegin();
       it != g.vertices().cend(); ++it) {
     verts[idx++] = it->first;
   }
@@ -88,73 +168,6 @@ void gordejchik::cmdVertexes(const std::string& args,
     out << verts[i] << "\n";
   }
   delete[] verts;
-}
-
-static void printEdgeInfo(const gordejchik::Graph& g,
-    const std::string& vertex, bool outbound, std::ostream& out)
-{
-  using EdgeTable = gordejchik::Graph::EdgeTable;
-
-  size_t pairCount = 0;
-  for (auto it = g.edges().cbegin(); it != g.edges().cend(); ++it) {
-    const std::string& check = outbound ? it->first.first : it->first.second;
-    if (check == vertex) {
-      ++pairCount;
-    }
-  }
-  if (pairCount == 0) {
-    return;
-  }
-
-  struct NeighborInfo {
-    std::string name;
-    size_t* weights;
-    size_t count;
-  };
-
-  NeighborInfo* neighbors = new NeighborInfo[pairCount];
-  size_t idx = 0;
-
-  for (auto it = g.edges().cbegin(); it != g.edges().cend(); ++it) {
-    const std::string& check = outbound ? it->first.first : it->first.second;
-    if (check != vertex) {
-      continue;
-    }
-    const std::string& other = outbound ? it->first.second : it->first.first;
-    const gordejchik::Graph::WeightList& wl = it->second;
-
-    size_t wCount = 0;
-    for (auto wit = wl.cbegin(); wit != wl.cend(); ++wit) {
-      ++wCount;
-    }
-
-    size_t* warr = new size_t[wCount];
-    size_t wi = 0;
-    for (auto wit = wl.cbegin(); wit != wl.cend(); ++wit) {
-      warr[wi++] = *wit;
-    }
-    std::sort(warr, warr + wCount);
-
-    neighbors[idx].name = other;
-    neighbors[idx].weights = warr;
-    neighbors[idx].count = wCount;
-    ++idx;
-  }
-
-  std::sort(neighbors, neighbors + pairCount,
-      [](const NeighborInfo& a, const NeighborInfo& b) -> bool {
-        return a.name < b.name;
-      });
-
-  for (size_t i = 0; i < pairCount; ++i) {
-    out << neighbors[i].name;
-    for (size_t j = 0; j < neighbors[i].count; ++j) {
-      out << " " << neighbors[i].weights[j];
-    }
-    out << "\n";
-    delete[] neighbors[i].weights;
-  }
-  delete[] neighbors;
 }
 
 void gordejchik::cmdOutbound(const std::string& args,
@@ -198,10 +211,6 @@ void gordejchik::cmdInbound(const std::string& args,
 void gordejchik::cmdBind(const std::string& args,
     std::ostream& out, GraphCollection& graphs)
 {
-  if (args.empty()) {
-    printInvalid(out);
-    return;
-  }
   size_t pos = 0;
   std::string graphName = extractWord(args, pos);
   std::string from = extractWord(args, pos);
@@ -229,10 +238,6 @@ void gordejchik::cmdBind(const std::string& args,
 void gordejchik::cmdCut(const std::string& args,
     std::ostream& out, GraphCollection& graphs)
 {
-  if (args.empty()) {
-    printInvalid(out);
-    return;
-  }
   size_t pos = 0;
   std::string graphName = extractWord(args, pos);
   std::string from = extractWord(args, pos);
@@ -319,25 +324,29 @@ void gordejchik::cmdMerge(const std::string& args,
   const Graph& g2 = graphs.at(name2);
   Graph ng;
 
-  for (auto it = g1.vertices().cbegin();
+  using VCIter = Graph::VertexTable::ConstIterator;
+  using ECIter = Graph::EdgeTable::ConstIterator;
+  using WCIter = gordejchik::LCIter< size_t >;
+
+  for (VCIter it = g1.vertices().cbegin();
       it != g1.vertices().cend(); ++it) {
     ng.addVertex(it->first);
   }
-  for (auto it = g2.vertices().cbegin();
+  for (VCIter it = g2.vertices().cbegin();
       it != g2.vertices().cend(); ++it) {
     ng.addVertex(it->first);
   }
 
-  for (auto it = g1.edges().cbegin();
+  for (ECIter it = g1.edges().cbegin();
       it != g1.edges().cend(); ++it) {
-    for (auto wit = it->second.cbegin();
+    for (WCIter wit = it->second.cbegin();
         wit != it->second.cend(); ++wit) {
       ng.addEdge(it->first.first, it->first.second, *wit);
     }
   }
-  for (auto it = g2.edges().cbegin();
+  for (ECIter it = g2.edges().cbegin();
       it != g2.edges().cend(); ++it) {
-    for (auto wit = it->second.cbegin();
+    for (WCIter wit = it->second.cbegin();
         wit != it->second.cend(); ++wit) {
       ng.addEdge(it->first.first, it->first.second, *wit);
     }
@@ -383,12 +392,15 @@ void gordejchik::cmdExtract(const std::string& args,
     ng.addVertex(v);
   }
 
-  for (auto it = src.edges().cbegin();
+  using ECIter = Graph::EdgeTable::ConstIterator;
+  using WCIter = gordejchik::LCIter< size_t >;
+
+  for (ECIter it = src.edges().cbegin();
       it != src.edges().cend(); ++it) {
     const std::string& from = it->first.first;
     const std::string& to = it->first.second;
     if (ng.hasVertex(from) && ng.hasVertex(to)) {
-      for (auto wit = it->second.cbegin();
+      for (WCIter wit = it->second.cbegin();
           wit != it->second.cend(); ++wit) {
         ng.addEdge(from, to, *wit);
       }

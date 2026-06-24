@@ -60,7 +60,7 @@ bool gordejchik::Graph::removeEdge(const std::string& from,
   WeightList& wl = edges_.at(key);
   WeightList newList;
   bool removed = false;
-  for (auto it = wl.cbegin(); it != wl.cend(); ++it) {
+  for (LCIter< size_t > it = wl.cbegin(); it != wl.cend(); ++it) {
     if (!removed && *it == weight) {
       removed = true;
     } else {

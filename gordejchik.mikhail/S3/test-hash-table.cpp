@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(iteration)
   t.insert("c", 3);
   int sum = 0;
   size_t count = 0;
-  for (auto it = t.begin(); it != t.end(); ++it) {
+  for (Table::Iterator it = t.begin(); it != t.end(); ++it) {
     sum += it->second;
     ++count;
   }
