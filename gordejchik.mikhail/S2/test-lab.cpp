@@ -245,3 +245,63 @@ BOOST_AUTO_TEST_CASE(complexMixed)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(CalcErrorTests)
+
+BOOST_AUTO_TEST_CASE(unclosedParen)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("( 1 + 2"),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(extraClosingParen)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("1 + 2 )"),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(unknownToken)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("1 + abc"),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(divisionByZero)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("1 / 0"),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(moduloByZero)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("7 % 0"),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(missingOperand)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("1 +"),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(emptyExpression)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression(""),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(notWithoutOperand)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("!"),
+      std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
