@@ -1,5 +1,6 @@
 #include "stack.hpp"
 #include "queue.hpp"
+#include "calc.hpp"
 #include <boost/test/included/unit_test.hpp>
 
 BOOST_AUTO_TEST_SUITE(StackTests)
@@ -112,6 +113,58 @@ BOOST_AUTO_TEST_CASE(stringValues)
   q.push("beta");
   BOOST_CHECK_EQUAL(q.front(), "alpha");
   BOOST_CHECK_EQUAL(q.back(), "beta");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(CalcBinaryTests)
+
+BOOST_AUTO_TEST_CASE(addition)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("1 + 2"), 3);
+}
+
+BOOST_AUTO_TEST_CASE(subtraction)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("5 - 3"), 2);
+}
+
+BOOST_AUTO_TEST_CASE(multiplication)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("4 * 7"), 28);
+}
+
+BOOST_AUTO_TEST_CASE(division)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("10 / 3"), 3);
+}
+
+BOOST_AUTO_TEST_CASE(modulo)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("10 % 3"), 1);
+}
+
+BOOST_AUTO_TEST_CASE(singleNumber)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("42"), 42);
+}
+
+BOOST_AUTO_TEST_CASE(combinedExpression)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("4 * 7 - 3"), 25);
+}
+
+BOOST_AUTO_TEST_CASE(parenthesizedExpression)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("( 1 + 2 ) * ( 3 - 4 )"), -3);
+}
+
+BOOST_AUTO_TEST_CASE(nestedParentheses)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("( 10 / ( 2 + 3 ) % 4 )"), 2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
