@@ -1,4 +1,5 @@
 #include "stack.hpp"
+#include "queue.hpp"
 #include <boost/test/included/unit_test.hpp>
 
 BOOST_AUTO_TEST_SUITE(StackTests)
@@ -53,6 +54,64 @@ BOOST_AUTO_TEST_CASE(stringValues)
   BOOST_CHECK_EQUAL(s.top(), "world");
   s.pop();
   BOOST_CHECK_EQUAL(s.top(), "hello");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(QueueTests)
+
+BOOST_AUTO_TEST_CASE(pushAndFront)
+{
+  gordejchik::Queue< int > q;
+  q.push(10);
+  BOOST_CHECK_EQUAL(q.front(), 10);
+  BOOST_CHECK_EQUAL(q.back(), 10);
+  q.push(20);
+  BOOST_CHECK_EQUAL(q.front(), 10);
+  BOOST_CHECK_EQUAL(q.back(), 20);
+}
+
+BOOST_AUTO_TEST_CASE(fifoOrder)
+{
+  gordejchik::Queue< int > q;
+  q.push(1);
+  q.push(2);
+  q.push(3);
+  BOOST_CHECK_EQUAL(q.front(), 1);
+  q.pop();
+  BOOST_CHECK_EQUAL(q.front(), 2);
+  q.pop();
+  BOOST_CHECK_EQUAL(q.front(), 3);
+}
+
+BOOST_AUTO_TEST_CASE(emptyAndSize)
+{
+  gordejchik::Queue< int > q;
+  BOOST_CHECK(q.empty());
+  BOOST_CHECK_EQUAL(q.size(), 0);
+  q.push(42);
+  BOOST_CHECK(!q.empty());
+  BOOST_CHECK_EQUAL(q.size(), 1);
+  q.pop();
+  BOOST_CHECK(q.empty());
+  BOOST_CHECK_EQUAL(q.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(throwOnEmpty)
+{
+  gordejchik::Queue< int > q;
+  BOOST_CHECK_THROW(q.front(), std::logic_error);
+  BOOST_CHECK_THROW(q.back(), std::logic_error);
+  BOOST_CHECK_THROW(q.pop(), std::logic_error);
+}
+
+BOOST_AUTO_TEST_CASE(stringValues)
+{
+  gordejchik::Queue< std::string > q;
+  q.push("alpha");
+  q.push("beta");
+  BOOST_CHECK_EQUAL(q.front(), "alpha");
+  BOOST_CHECK_EQUAL(q.back(), "beta");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
