@@ -205,3 +205,43 @@ BOOST_AUTO_TEST_CASE(notAfterBinary)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(CalcPrecedenceTests)
+
+BOOST_AUTO_TEST_CASE(mulBeforeAdd)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("2 + 3 * 4"), 14);
+}
+
+BOOST_AUTO_TEST_CASE(leftAssocSubtraction)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("10 - 3 - 2"), 5);
+}
+
+BOOST_AUTO_TEST_CASE(leftAssocDivision)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("100 / 10 / 2"), 5);
+}
+
+BOOST_AUTO_TEST_CASE(deepNesting)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("( ( ( 1 + 2 ) ) )"), 3);
+}
+
+BOOST_AUTO_TEST_CASE(moduloPrecedence)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("1 + 10 % 3"), 2);
+}
+
+BOOST_AUTO_TEST_CASE(complexMixed)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("2 * 3 + 4 * 5"), 26);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
