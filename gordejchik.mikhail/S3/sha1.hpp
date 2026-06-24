@@ -25,6 +25,22 @@ namespace gordejchik {
   struct Sha1Hash< std::pair< std::string, std::string > > {
     size_t operator()(const std::pair< std::string, std::string >& key) const;
   };
+
+  struct StringEqual {
+    bool operator()(const std::string& a, const std::string& b) const
+    {
+      return a == b;
+    }
+  };
+
+  struct PairStringEqual {
+    bool operator()(const std::pair< std::string, std::string >& a,
+        const std::pair< std::string, std::string >& b) const
+    {
+      return a.first == b.first && a.second == b.second;
+    }
+  };
+    
 }
 
 #endif
