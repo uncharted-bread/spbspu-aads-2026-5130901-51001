@@ -18,6 +18,9 @@ static std::string extractWord(const std::string& line, size_t& pos)
 static size_t extractUnsigned(const std::string& line, size_t& pos)
 {
   std::string word = extractWord(line, pos);
+  if (word.empty()) {
+    throw std::invalid_argument("Expected number");
+  }
   return std::stoul(word);
 }
 
@@ -139,7 +142,7 @@ static void printEdgeInfo(const gordejchik::Graph& g,
   }
 
   std::sort(neighbors, neighbors + pairCount,
-      [](const NeighborInfo& a, const NeighborInfo& b) {
+      [](const NeighborInfo& a, const NeighborInfo& b) -> bool {
         return a.name < b.name;
       });
 
@@ -195,6 +198,10 @@ void gordejchik::cmdInbound(const std::string& args,
 void gordejchik::cmdBind(const std::string& args,
     std::ostream& out, GraphCollection& graphs)
 {
+  if (args.empty()) {
+    printInvalid(out);
+    return;
+  }
   size_t pos = 0;
   std::string graphName = extractWord(args, pos);
   std::string from = extractWord(args, pos);
@@ -222,6 +229,10 @@ void gordejchik::cmdBind(const std::string& args,
 void gordejchik::cmdCut(const std::string& args,
     std::ostream& out, GraphCollection& graphs)
 {
+  if (args.empty()) {
+    printInvalid(out);
+    return;
+  }
   size_t pos = 0;
   std::string graphName = extractWord(args, pos);
   std::string from = extractWord(args, pos);
@@ -256,6 +267,10 @@ void gordejchik::cmdCut(const std::string& args,
 void gordejchik::cmdCreate(const std::string& args,
     std::ostream& out, GraphCollection& graphs)
 {
+  if (args.empty()) {
+    printInvalid(out);
+    return;
+  }
   size_t pos = 0;
   std::string name = extractWord(args, pos);
   if (name.empty() || graphs.contains(name)) {
