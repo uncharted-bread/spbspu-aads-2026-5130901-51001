@@ -168,3 +168,40 @@ BOOST_AUTO_TEST_CASE(nestedParentheses)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(CalcUnaryNotTests)
+
+BOOST_AUTO_TEST_CASE(notZero)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("! 0"), ~0LL);
+}
+
+BOOST_AUTO_TEST_CASE(notPositive)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("! 5"), ~5LL);
+}
+
+BOOST_AUTO_TEST_CASE(doubleNot)
+{
+  BOOST_CHECK_EQUAL(gordejchik::calculateExpression("! ! 5"), 5);
+}
+
+BOOST_AUTO_TEST_CASE(notWithParens)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("! ( 3 + 2 )"), ~5LL);
+}
+
+BOOST_AUTO_TEST_CASE(notInBinaryExpr)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("! 5 + 3"), ~5LL + 3);
+}
+
+BOOST_AUTO_TEST_CASE(notAfterBinary)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("3 + ! 5"), 3 + ~5LL);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
