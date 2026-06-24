@@ -408,6 +408,86 @@ namespace gordejchik {
       return result;
     }
 
+    const_iterator rotateRight(const_iterator pos)
+    {
+      Node_* node = pos.node_;
+      if (!node || !node->parent_) {
+        throw std::logic_error("BSTree: cannot rotate");
+      }
+      Node_* parent = node->parent_;
+      if (parent->left_ != node) {
+        throw std::logic_error("BSTree: rotateRight requires left child");
+      }
+      Node_* grandparent = parent->parent_;
+      parent->left_ = node->right_;
+      if (node->right_) {
+        node->right_->parent_ = parent;
+      }
+      node->right_ = parent;
+      parent->parent_ = node;
+      node->parent_ = grandparent;
+      if (!grandparent) {
+        root_ = node;
+      } else if (grandparent->left_ == parent) {
+        grandparent->left_ = node;
+      } else {
+        grandparent->right_ = node;
+      }
+      Node_** addr = const_cast< Node_** >(&root_);
+      return const_iterator(node, addr);
+    }
+
+    const_iterator rotateLeft(const_iterator pos)
+    {
+      Node_* node = pos.node_;
+      if (!node || !node->parent_) {
+        throw std::logic_error("BSTree: cannot rotate");
+      }
+      Node_* parent = node->parent_;
+      if (parent->right_ != node) {
+        throw std::logic_error("BSTree: rotateLeft requires right child");
+      }
+      Node_* grandparent = parent->parent_;
+      parent->right_ = node->left_;
+      if (node->left_) {
+        node->left_->parent_ = parent;
+      }
+      node->left_ = parent;
+      parent->parent_ = node;
+      node->parent_ = grandparent;
+      if (!grandparent) {
+        root_ = node;
+      } else if (grandparent->left_ == parent) {
+        grandparent->left_ = node;
+      } else {
+        grandparent->right_ = node;
+      }
+      Node_** addr = const_cast< Node_** >(&root_);
+      return const_iterator(node, addr);
+    }
+
+    const_iterator rotateLargeRight(const_iterator pos)
+    {
+      Node_* node = pos.node_;
+      if (!node || !node->parent_ || !node->parent_->parent_) {
+        throw std::logic_error("BSTree: cannot large rotate");
+      }
+      Node_** addr = const_cast< Node_** >(&root_);
+      rotateLeft(const_iterator(node, addr));
+      return rotateRight(const_iterator(node, addr));
+    }
+
+    const_iterator rotateLargeLeft(const_iterator pos)
+    {
+      Node_* node = pos.node_;
+      if (!node || !node->parent_ || !node->parent_->parent_) {
+        throw std::logic_error("BSTree: cannot large rotate");
+      }
+      Node_** addr = const_cast< Node_** >(&root_);
+      rotateRight(const_iterator(node, addr));
+      return rotateLeft(const_iterator(node, addr));
+    }
+
   private:
     using Node_ = detail::BSTNode< Key, Value >;
 
