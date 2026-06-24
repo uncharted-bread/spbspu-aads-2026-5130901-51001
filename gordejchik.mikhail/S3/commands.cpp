@@ -283,3 +283,101 @@ void gordejchik::cmdCreate(const std::string& args,
   }
   safeInsert(graphs, name, g);
 }
+
+void gordejchik::cmdMerge(const std::string& args,
+    std::ostream& out, GraphCollection& graphs)
+{
+  size_t pos = 0;
+  std::string newName = extractWord(args, pos);
+  std::string name1 = extractWord(args, pos);
+  std::string name2 = extractWord(args, pos);
+  if (newName.empty() || name1.empty() || name2.empty()) {
+    printInvalid(out);
+    return;
+  }
+  if (graphs.contains(newName)
+      || !graphs.contains(name1) || !graphs.contains(name2)) {
+    printInvalid(out);
+    return;
+  }
+  const Graph& g1 = graphs.at(name1);
+  const Graph& g2 = graphs.at(name2);
+  Graph ng;
+
+  for (auto it = g1.vertices().cbegin();
+      it != g1.vertices().cend(); ++it) {
+    ng.addVertex(it->first);
+  }
+  for (auto it = g2.vertices().cbegin();
+      it != g2.vertices().cend(); ++it) {
+    ng.addVertex(it->first);
+  }
+
+  for (auto it = g1.edges().cbegin();
+      it != g1.edges().cend(); ++it) {
+    for (auto wit = it->second.cbegin();
+        wit != it->second.cend(); ++wit) {
+      ng.addEdge(it->first.first, it->first.second, *wit);
+    }
+  }
+  for (auto it = g2.edges().cbegin();
+      it != g2.edges().cend(); ++it) {
+    for (auto wit = it->second.cbegin();
+        wit != it->second.cend(); ++wit) {
+      ng.addEdge(it->first.first, it->first.second, *wit);
+    }
+  }
+  safeInsert(graphs, newName, ng);
+}
+
+void gordejchik::cmdExtract(const std::string& args,
+    std::ostream& out, GraphCollection& graphs)
+{
+  size_t pos = 0;
+  std::string newName = extractWord(args, pos);
+  std::string srcName = extractWord(args, pos);
+  if (newName.empty() || srcName.empty()) {
+    printInvalid(out);
+    return;
+  }
+  if (graphs.contains(newName) || !graphs.contains(srcName)) {
+    printInvalid(out);
+    return;
+  }
+
+  std::string countStr = extractWord(args, pos);
+  size_t count = 0;
+  if (!countStr.empty()) {
+    try {
+      count = std::stoul(countStr);
+    } catch (...) {
+      printInvalid(out);
+      return;
+    }
+  }
+
+  const Graph& src = graphs.at(srcName);
+  Graph ng;
+
+  for (size_t i = 0; i < count; ++i) {
+    std::string v = extractWord(args, pos);
+    if (v.empty() || !src.hasVertex(v)) {
+      printInvalid(out);
+      return;
+    }
+    ng.addVertex(v);
+  }
+
+  for (auto it = src.edges().cbegin();
+      it != src.edges().cend(); ++it) {
+    const std::string& from = it->first.first;
+    const std::string& to = it->first.second;
+    if (ng.hasVertex(from) && ng.hasVertex(to)) {
+      for (auto wit = it->second.cbegin();
+          wit != it->second.cend(); ++wit) {
+        ng.addEdge(from, to, *wit);
+      }
+    }
+  }
+  safeInsert(graphs, newName, ng);
+}
