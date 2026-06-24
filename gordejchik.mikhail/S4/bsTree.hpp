@@ -488,6 +488,71 @@ namespace gordejchik {
       return rotateLeft(const_iterator(node, addr));
     }
 
+    size_t height(const_iterator pos) const
+    {
+      return subtreeHeight(pos.node_);
+    }
+
+    size_t height() const
+    {
+      return subtreeHeight(root_);
+    }
+
+    BSTree(const BSTree& other):
+      root_(nullptr),
+      size_(0),
+      cmp_(other.cmp_)
+    {
+      root_ = cloneSubtree(other.root_, nullptr);
+      size_ = other.size_;
+    }
+
+    BSTree& operator=(const BSTree& other)
+    {
+      if (this != &other) {
+        BSTree tmp(other);
+        swap(tmp);
+      }
+      return *this;
+    }
+
+    BSTree(BSTree&& other):
+      root_(other.root_),
+      size_(other.size_),
+      cmp_(other.cmp_)
+    {
+      other.root_ = nullptr;
+      other.size_ = 0;
+    }
+
+    BSTree& operator=(BSTree&& other)
+    {
+      if (this != &other) {
+        clear();
+        root_ = other.root_;
+        size_ = other.size_;
+        cmp_ = other.cmp_;
+        other.root_ = nullptr;
+        other.size_ = 0;
+      }
+      return *this;
+    }
+
+    void swap(BSTree& other)
+    {
+      Node_* tmpRoot = root_;
+      root_ = other.root_;
+      other.root_ = tmpRoot;
+
+      size_t tmpSize = size_;
+      size_ = other.size_;
+      other.size_ = tmpSize;
+
+      Compare tmpCmp = cmp_;
+      cmp_ = other.cmp_;
+      other.cmp_ = tmpCmp;
+    }
+
   private:
     using Node_ = detail::BSTNode< Key, Value >;
 
@@ -554,11 +619,44 @@ namespace gordejchik {
       delete node;
     }
 
+    static size_t subtreeHeight(const Node_* node)
+    {
+      if (!node) {
+        return 0;
+      }
+      const size_t lh = subtreeHeight(node->left_);
+      const size_t rh = subtreeHeight(node->right_);
+      return 1 + (lh > rh ? lh : rh);
+    }
+
+    static Node_* cloneSubtree(const Node_* src, Node_* parent)
+    {
+      if (!src) {
+        return nullptr;
+      }
+      Node_* copy = new Node_(src->data_.first, src->data_.second, parent);
+      try {
+        copy->left_ = cloneSubtree(src->left_, copy);
+        copy->right_ = cloneSubtree(src->right_, copy);
+      } catch (...) {
+        freeSubtree(copy);
+        throw;
+      }
+      return copy;
+    }
+
     template< class K, class V >
     friend class BSTIterator;
     template< class K, class V >
     friend class BSTConstIterator;
   };
+
+  template< class Key, class Value, class Compare >
+  void swap(BSTree< Key, Value, Compare >& a, BSTree< Key, Value, Compare >& b)
+  {
+    a.swap(b);
+  }
+
 }
 
 #endif
