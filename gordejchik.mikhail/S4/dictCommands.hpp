@@ -12,6 +12,9 @@ namespace gordejchik {
 
   void readDicts(DictOfDicts& dicts, std::istream& in);
   void doPrint(const DictOfDicts& dicts, std::istream& in, std::ostream& out);
+  void doComplement(DictOfDicts& dicts, std::istream& in, std::ostream& out);
+  void doIntersect(DictOfDicts& dicts, std::istream& in, std::ostream& out);
+  void doUnion(DictOfDicts& dicts, std::istream& in, std::ostream& out);
 }
 
 #endif
