@@ -12,7 +12,7 @@ namespace gordejchik {
     int totalPower_;
   };
 
-  BackpackResult solveBackpack (Card** allCards, size_t cardCount, int budget);
+  BackpackResult solveBackpack(Card** allCards, size_t cardCount, int budget);
   void freeBackpackResult(BackpackResult& result);
 }
 
