@@ -13,6 +13,8 @@ namespace gordejchik {
       class Equal = std::equal_to< Key > >
   class HashTable {
   public:
+    using value_type = std::pair< Key, Value >;
+
     HashTable();
     explicit HashTable(size_t capacity);
     HashTable(const HashTable& other);
@@ -40,8 +42,7 @@ namespace gordejchik {
     static const size_t GROW_FACTOR = 2;
 
     struct Slot {
-      Key key_;
-      Value value_;
+      value_type data_;
       size_t psl_;
       bool occupied_;
     };
@@ -192,7 +193,7 @@ namespace gordejchik {
       if (psl > slots_[idx].psl_) {
         return capacity_;
       }
-      if (equal_(slots_[idx].key_, key)) {
+      if (equal_(slots_[idx].data_.first, key)) {
         return idx;
       }
       ++psl;
@@ -209,7 +210,7 @@ namespace gordejchik {
     if (idx == capacity_) {
       throw std::out_of_range("Key not found");
     }
-    return slots_[idx].value_;
+    return slots_[idx].data_.second;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -220,7 +221,7 @@ namespace gordejchik {
     if (idx == capacity_) {
       throw std::out_of_range("Key not found");
     }
-    return slots_[idx].value_;
+    return slots_[idx].data_.second;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -273,8 +274,8 @@ namespace gordejchik {
     for (size_t i = 0; i < oldCapacity; ++i) {
       if (oldSlots[i].occupied_) {
         insertInto(slots_, capacity_,
-            std::move(oldSlots[i].key_),
-            std::move(oldSlots[i].value_));
+            std::move(oldSlots[i].data_.first),
+            std::move(oldSlots[i].data_.second));
       }
     }
     delete[] oldSlots;
@@ -298,20 +299,20 @@ namespace gordejchik {
     size_t psl = 0;
     while (true) {
       if (!target[idx].occupied_) {
-        target[idx].key_ = std::move(key);
-        target[idx].value_ = std::move(value);
+        target[idx].data_.first = std::move(key);
+        target[idx].data_.second = std::move(value);
         target[idx].psl_ = psl;
         target[idx].occupied_ = true;
         ++size_;
         return;
       }
-      if (equal_(target[idx].key_, key)) {
-        target[idx].value_ = std::move(value);
+      if (equal_(target[idx].data_.first, key)) {
+        target[idx].data_.second = std::move(value);
         return;
       }
       if (psl > target[idx].psl_) {
-        std::swap(key, target[idx].key_);
-        std::swap(value, target[idx].value_);
+        std::swap(key, target[idx].data_.first);
+        std::swap(value, target[idx].data_.second);
         std::swap(psl, target[idx].psl_);
       }
       ++psl;
@@ -325,7 +326,7 @@ namespace gordejchik {
   {
     for (size_t i = 0; i < capacity_; ++i) {
       if (slots_[i].occupied_) {
-        func(slots_[i].key_, slots_[i].value_);
+        func(slots_[i].data_.first, slots_[i].data_.second);
       }
     }
     return func;
