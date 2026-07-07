@@ -3,45 +3,16 @@
 #include <iostream>
 #include <string>
 
-static const char* TEAL = "\033[38;2;0;128;128m";
-static const char* DIM = "\033[2m";
-static const char* RESET = "\033[0m";
-static const char* BOLD = "\033[1m";
-
-static void printBanner()
-{
-  std::cerr << TEAL;
-  std::cerr << "+-------------------------------------------------+"
-      << "\n";
-  std::cerr << "|  " << BOLD << "CustStone - ваша настраиваемая карточная игра"
-    << RESET << TEAL
-    << "  |" << "\n";
-  std::cerr << "|  Введите 'help' для справки"
-    << "                     |" << "\n";
-  std::cerr << "+-------------------------------------------------+"
-    << "\n";
-  std::cerr << RESET;
-}
-
-static void printPrompt()
-{
-  std::cerr << TEAL << "> " << RESET;
-}
-
 int main()
 {
-  printBanner();
   gordejchik::DeckStore decks;
   std::string line;
-  printPrompt();
   while (std::getline(std::cin, line)) {
     if (line.empty()) {
-      printPrompt();
       continue;
     }
     gordejchik::ParsedCommand cmd = gordejchik::parseLine(line);
     if (cmd.count_ == 0) {
-      printPrompt();
       continue;
     }
     const std::string& name = cmd.tokens_[0];
@@ -92,12 +63,8 @@ int main()
           cmd.tokens_[2], std::cout);
     } else {
       std::cout << "<INVALID COMMAND>" << "\n";
-      std::cerr << "\033[31m" << ">> Ошибка: неверная команда"
-          << "\033[0m" << "\n";
     }
-    printPrompt();
   }
-  std::cerr << "\n" << DIM << "Выход." << RESET << "\n";
   decks.forEach(
     [](const std::string&, gordejchik::Deck* deck)
     {

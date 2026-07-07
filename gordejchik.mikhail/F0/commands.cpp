@@ -4,19 +4,9 @@
 #include <fstream>
 #include <string>
 
-static const char* GREEN = "\033[32m";
-static const char* RED = "\033[31m";
-static const char* RESET = "\033[0m";
-
-static void ok(const std::string& msg)
-{
-  std::cerr << GREEN << "  [OK] " << msg << RESET << "\n";
-}
-
 static void fail(std::ostream& out)
 {
   out << "<INVALID COMMAND>" << "\n";
-  std::cerr << RED << " [ERR] Ошибка: неверная команда" << RESET << "\n";
 }
 
 static bool parseInt(const std::string& str, int& result)
@@ -41,7 +31,6 @@ void gordejchik::cmdCreate(DeckStore& decks,
     return;
   }
   decks.insert(name, new Deck(name));
-  ok("Колода '" + name + "' создана");
 }
 
 void gordejchik::cmdDelete(DeckStore& decks,
@@ -54,7 +43,6 @@ void gordejchik::cmdDelete(DeckStore& decks,
   Deck* deck = decks.at(name);
   decks.erase(name);
   delete deck;
-  ok("Колода '" + name + "' удалена");
 }
 
 void gordejchik::cmdHelp(std::ostream& out)
@@ -89,7 +77,6 @@ void gordejchik::cmdHelp(std::ostream& out)
       << "- загрузить из файла" << "\n";
   out << "help                                 "
       << "- список команд" << "\n";
-  ok("Справка выведена");
 }
 
 void gordejchik::cmdAdd(DeckStore& decks,
@@ -115,7 +102,6 @@ void gordejchik::cmdAdd(DeckStore& decks,
   }
   Card* card = new Card{cardName, power, cost, "", ""};
   deck->cards_.insert(cardName, card);
-  ok("Карта '" + cardName + "' добавлена в '" + deckName + "'");
 }
 
 void gordejchik::cmdRemove(DeckStore& decks,
@@ -134,7 +120,6 @@ void gordejchik::cmdRemove(DeckStore& decks,
   Card* card = deck->cards_.at(cardName);
   deck->cards_.erase(cardName);
   delete card;
-  ok("Карта '" + cardName + "' удалена из '" + deckName + "'");
 }
 
 void gordejchik::cmdShow(DeckStore& decks,
@@ -165,7 +150,6 @@ void gordejchik::cmdShow(DeckStore& decks,
         << ", COST " << card->cost << "\n";
   }
   delete[] names;
-  ok("Колода '" + name + "': " + std::to_string(count) + " карт");
 }
 
 void gordejchik::cmdInfo(DeckStore& decks,
@@ -205,7 +189,6 @@ void gordejchik::cmdInfo(DeckStore& decks,
   }
   std::string footer(header.size(), '=');
   out << footer << "\n";
-  ok("Информация о карте '" + cardName + "'");
 }
 
 void gordejchik::cmdSetType(DeckStore& decks,
@@ -223,7 +206,6 @@ void gordejchik::cmdSetType(DeckStore& decks,
     return;
   }
   deck->cards_.at(cardName)->type = type;
-  ok("Тип карты '" + cardName + "' установлен");
 }
 
 void gordejchik::cmdSetDesc(DeckStore& decks,
@@ -241,7 +223,6 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
     return;
   }
   deck->cards_.at(cardName)->description = desc;
-  ok("Описание карты '" + cardName + "' установлено");
 }
 
 void gordejchik::cmdRange(DeckStore& decks,
@@ -289,7 +270,6 @@ void gordejchik::cmdRange(DeckStore& decks,
   );
   if (found == 0) {
     delete[] names;
-    ok("Найдено карт: 0");
     return;
   }
   std::sort(names, names + found);
@@ -299,7 +279,6 @@ void gordejchik::cmdRange(DeckStore& decks,
         << ", COST " << card->cost << "\n";
   }
   delete[] names;
-  ok("Найдено карт: " + std::to_string(found));
 }
 
 void gordejchik::cmdOptimize(DeckStore& decks,
@@ -348,7 +327,6 @@ void gordejchik::cmdOptimize(DeckStore& decks,
         << ", COST " << card->cost << "\n";
   }
   out << "TOTAL POWER: " << res.totalPower_ << "\n";
-  ok("Оптимизация завершена, бюджет: " + budgetStr);
   if (!newDeckName.empty()) {
     Deck* newDeck = new Deck(newDeckName);
     for (size_t i = 0; i < res.count_; ++i) {
@@ -447,7 +425,6 @@ void gordejchik::cmdBattle(DeckStore& decks,
   } else {
     out << "DRAW" << "\n";
   }
-  ok("Битва окончена");
   freeBackpackResult(res1);
   freeBackpackResult(res2);
 }
@@ -487,7 +464,6 @@ void gordejchik::cmdMerge(DeckStore& decks,
     }
   );
   decks.insert(newName, merged);
-  ok("Колоды объединены в '" + newName + "'");
 }
 
 void gordejchik::cmdSave(DeckStore& decks,
@@ -516,7 +492,6 @@ void gordejchik::cmdSave(DeckStore& decks,
       file << card->description << "\n";
     }
   );
-  ok("Колода сохранена в '" + filename + "'");
 }
 
 void gordejchik::cmdLoad(DeckStore& decks,
@@ -582,5 +557,4 @@ void gordejchik::cmdLoad(DeckStore& decks,
     deck->cards_.insert(cardName, card);
   }
   decks.insert(deckName, deck);
-  ok("Колода загружена из '" + filename + "'");
 }
