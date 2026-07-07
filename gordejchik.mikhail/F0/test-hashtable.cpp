@@ -197,21 +197,4 @@ BOOST_AUTO_TEST_CASE(iteratorConvertsToConstIterator)
   BOOST_TEST(cit->second == 5);
 }
 
-BOOST_AUTO_TEST_CASE(forEachTraversal)
-{
-  HashTable< std::string, int > ht;
-  ht.insert("a", 1);
-  ht.insert("b", 2);
-  ht.insert("c", 3);
-
-  int sum = 0;
-  ht.forEach(
-    [&sum](const std::string&, int val)
-    {
-      sum += val;
-    }
-  );
-  BOOST_TEST(sum == 6);
-}
-
 BOOST_AUTO_TEST_SUITE_END()

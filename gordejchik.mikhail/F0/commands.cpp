@@ -135,13 +135,11 @@ void gordejchik::cmdShow(DeckStore& decks,
   }
   std::string* names = new std::string[count];
   size_t idx = 0;
-  deck->cards_.forEach(
-    [&names, &idx](const std::string& key, Card*)
-    {
-      names[idx] = key;
-      ++idx;
-    }
-  );
+  using CardCIter = HashTable< std::string, Card* >::ConstIterator;
+  for (CardCIter it = deck->cards_.cbegin(); it != deck->cards_.cend(); ++it) {
+    names[idx] = it->first;
+    ++idx;
+  }
   std::sort(names, names + count);
   for (size_t i = 0; i < count; ++i) {
     Card* card = deck->cards_.at(names[i]);
@@ -256,17 +254,15 @@ void gordejchik::cmdRange(DeckStore& decks,
   std::string* names = new std::string[total];
   size_t found = 0;
   const bool usePower = (stat == "power");
-  deck->cards_.forEach(
-    [&names, &found, usePower, minVal, maxVal](
-        const std::string& key, Card* card)
-    {
-      const int val = usePower ? card->power : card->cost;
-      if (val >= minVal && val <= maxVal) {
-        names[found] = key;
-        ++found;
-      }
+  using CardCIter = HashTable< std::string, Card* >::ConstIterator;
+  for (CardCIter it = deck->cards_.cbegin(); it != deck->cards_.cend(); ++it) {
+    const Card* card = it->second;
+    const int val = usePower ? card->power : card->cost;
+    if (val >= minVal && val <= maxVal) {
+      names[found] = it->first;
+      ++found;
     }
-  );
+  }
   if (found == 0) {
     delete[] names;
     return;
@@ -306,13 +302,11 @@ void gordejchik::cmdOptimize(DeckStore& decks,
   }
   Card** allCards = new Card*[count];
   size_t idx = 0;
-  deck->cards_.forEach(
-    [&allCards, &idx](const std::string&, Card* card)
-    {
-      allCards[idx] = card;
-      ++idx;
-    }
-  );
+  using CardIter = HashTable< std::string, Card* >::Iterator;
+  for (CardIter it = deck->cards_.begin(); it != deck->cards_.end(); ++it) {
+    allCards[idx] = it->second;
+    ++idx;
+  }
   BackpackResult res = solveBackpack(allCards, count, budget);
   delete[] allCards;
   std::string* names = new std::string[res.count()];
@@ -360,27 +354,22 @@ void gordejchik::cmdBattle(DeckStore& decks,
   const size_t count2 = deck2->cards_.size();
   Card** arr1 = nullptr;
   Card** arr2 = nullptr;
+  using CardIter = HashTable< std::string, Card* >::Iterator;
   if (count1 > 0) {
     arr1 = new Card*[count1];
     size_t idx = 0;
-    deck1->cards_.forEach(
-      [&arr1, &idx](const std::string&, Card* card)
-      {
-        arr1[idx] = card;
-        ++idx;
-      }
-    );
+    for (CardIter it = deck1->cards_.begin(); it != deck1->cards_.end(); ++it) {
+      arr1[idx] = it->second;
+      ++idx;
+    }
   }
   if (count2 > 0) {
     arr2 = new Card*[count2];
     size_t idx = 0;
-    deck2->cards_.forEach(
-      [&arr2, &idx](const std::string&, Card* card)
-      {
-        arr2[idx] = card;
-        ++idx;
-      }
-    );
+    for (CardIter it = deck2->cards_.begin(); it != deck2->cards_.end(); ++it) {
+      arr2[idx] = it->second;
+      ++idx;
+    }
   }
   BackpackResult res1 = solveBackpack(arr1, count1, budget);
   BackpackResult res2 = solveBackpack(arr2, count2, budget);
@@ -441,24 +430,21 @@ void gordejchik::cmdMerge(DeckStore& decks,
   Deck* d1 = decks.at(name1);
   Deck* d2 = decks.at(name2);
   Deck* merged = new Deck(newName);
-  d1->cards_.forEach(
-    [&merged](const std::string&, Card* card)
-    {
+  using CardCIter = HashTable< std::string, Card* >::ConstIterator;
+  for (CardCIter it = d1->cards_.cbegin(); it != d1->cards_.cend(); ++it) {
+    const Card* card = it->second;
+    Card* copy = new Card{card->name, card->power,
+        card->cost, card->type, card->description};
+    merged->cards_.insert(copy->name, copy);
+  }
+  for (CardCIter it = d2->cards_.cbegin(); it != d2->cards_.cend(); ++it) {
+    const Card* card = it->second;
+    if (!merged->cards_.contains(card->name)) {
       Card* copy = new Card{card->name, card->power,
           card->cost, card->type, card->description};
       merged->cards_.insert(copy->name, copy);
     }
-  );
-  d2->cards_.forEach(
-    [&merged](const std::string&, Card* card)
-    {
-      if (!merged->cards_.contains(card->name)) {
-        Card* copy = new Card{card->name, card->power,
-            card->cost, card->type, card->description};
-        merged->cards_.insert(copy->name, copy);
-      }
-    }
-  );
+  }
   decks.insert(newName, merged);
 }
 
@@ -478,16 +464,15 @@ void gordejchik::cmdSave(DeckStore& decks,
   }
   const size_t count = deck->cards_.size();
   file << count << "\n";
-  deck->cards_.forEach(
-    [&file](const std::string&, Card* card)
-    {
-      file << card->name << " "
-          << card->power << " "
-          << card->cost << "\n";
-      file << card->type << "\n";
-      file << card->description << "\n";
-    }
-  );
+  using CardCIter = HashTable< std::string, Card* >::ConstIterator;
+  for (CardCIter it = deck->cards_.cbegin(); it != deck->cards_.cend(); ++it) {
+    const Card* card = it->second;
+    file << card->name << " "
+        << card->power << " "
+        << card->cost << "\n";
+    file << card->type << "\n";
+    file << card->description << "\n";
+  }
 }
 
 void gordejchik::cmdLoad(DeckStore& decks,

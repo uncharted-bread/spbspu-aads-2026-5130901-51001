@@ -7,10 +7,8 @@ gordejchik::Deck::Deck(const std::string& name):
 
 gordejchik::Deck::~Deck()
 {
-  cards_.forEach(
-    [](const std::string&, Card* card)
-    {
-      delete card;
-    }
-  );
+  using CardIter = HashTable< std::string, Card* >::Iterator;
+  for (CardIter it = cards_.begin(); it != cards_.end(); ++it) {
+    delete it->second;
+  }
 }

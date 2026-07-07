@@ -65,11 +65,9 @@ int main()
       std::cout << "<INVALID COMMAND>" << "\n";
     }
   }
-  decks.forEach(
-    [](const std::string&, gordejchik::Deck* deck)
-    {
-      delete deck;
-    }
-  );
+  using DeckIter = gordejchik::DeckStore::Iterator;
+  for (DeckIter it = decks.begin(); it != decks.end(); ++it) {
+    delete it->second;
+  }
   return 0;
 }
