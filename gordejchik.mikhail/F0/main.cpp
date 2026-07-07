@@ -22,24 +22,6 @@ int main()
       const std::string& name = cmd.tokens_[0];
       if (commands.contains(name)) {
         commands.at(name)(decks, cmd, std::cout);
-      } else if (name == "optimize" && cmd.count_ == 3) {
-        gordejchik::cmdOptimize(decks, cmd.tokens_[1],
-            cmd.tokens_[2], "", std::cout);
-      } else if (name == "optimize" && cmd.count_ == 4) {
-        gordejchik::cmdOptimize(decks, cmd.tokens_[1],
-            cmd.tokens_[2], cmd.tokens_[3], std::cout);
-      } else if (name == "battle" && cmd.count_ == 4) {
-        gordejchik::cmdBattle(decks, cmd.tokens_[1],
-            cmd.tokens_[2], cmd.tokens_[3], std::cout);
-      } else if (name == "merge" && cmd.count_ == 4) {
-        gordejchik::cmdMerge(decks, cmd.tokens_[1],
-            cmd.tokens_[2], cmd.tokens_[3], std::cout);
-      } else if (name == "save" && cmd.count_ == 3) {
-        gordejchik::cmdSave(decks, cmd.tokens_[1],
-            cmd.tokens_[2], std::cout);
-      } else if (name == "load" && cmd.count_ == 3) {
-        gordejchik::cmdLoad(decks, cmd.tokens_[1],
-            cmd.tokens_[2], std::cout);
       } else {
         std::cout << "<INVALID COMMAND>" << "\n";
       }

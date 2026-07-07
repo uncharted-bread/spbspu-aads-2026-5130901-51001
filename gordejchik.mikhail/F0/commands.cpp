@@ -347,10 +347,15 @@ void gordejchik::cmdRange(DeckStore& decks,
 }
 
 void gordejchik::cmdOptimize(DeckStore& decks,
-    const std::string& deckName,
-    const std::string& budgetStr,
-    const std::string& newDeckName, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 3 && cmd.count_ != 4) {
+    fail(out);
+    return;
+  }
+  const std::string& deckName = cmd.tokens_[1];
+  const std::string& budgetStr = cmd.tokens_[2];
+  const std::string newDeckName = (cmd.count_ == 4) ? cmd.tokens_[3] : "";
   if (!decks.contains(deckName)) {
     fail(out);
     return;
@@ -426,10 +431,15 @@ void gordejchik::cmdOptimize(DeckStore& decks,
 }
 
 void gordejchik::cmdBattle(DeckStore& decks,
-    const std::string& deck1Name,
-    const std::string& deck2Name,
-    const std::string& budgetStr, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 4) {
+    fail(out);
+    return;
+  }
+  const std::string& deck1Name = cmd.tokens_[1];
+  const std::string& deck2Name = cmd.tokens_[2];
+  const std::string& budgetStr = cmd.tokens_[3];
   if (!decks.contains(deck1Name)
       || !decks.contains(deck2Name)) {
     fail(out);
@@ -539,10 +549,15 @@ void gordejchik::cmdBattle(DeckStore& decks,
 }
 
 void gordejchik::cmdMerge(DeckStore& decks,
-    const std::string& newName,
-    const std::string& name1,
-    const std::string& name2, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 4) {
+    fail(out);
+    return;
+  }
+  const std::string& newName = cmd.tokens_[1];
+  const std::string& name1 = cmd.tokens_[2];
+  const std::string& name2 = cmd.tokens_[3];
   if (!decks.contains(name1) || !decks.contains(name2)) {
     fail(out);
     return;
@@ -567,9 +582,14 @@ void gordejchik::cmdMerge(DeckStore& decks,
 }
 
 void gordejchik::cmdSave(DeckStore& decks,
-    const std::string& deckName,
-    const std::string& filename, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 3) {
+    fail(out);
+    return;
+  }
+  const std::string& deckName = cmd.tokens_[1];
+  const std::string& filename = cmd.tokens_[2];
   if (!decks.contains(deckName)) {
     fail(out);
     return;
@@ -594,9 +614,14 @@ void gordejchik::cmdSave(DeckStore& decks,
 }
 
 void gordejchik::cmdLoad(DeckStore& decks,
-    const std::string& deckName,
-    const std::string& filename, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 3) {
+    fail(out);
+    return;
+  }
+  const std::string& deckName = cmd.tokens_[1];
+  const std::string& filename = cmd.tokens_[2];
   if (decks.contains(deckName)) {
     fail(out);
     return;
@@ -681,5 +706,10 @@ gordejchik::makeCommandTable()
   table.insert("set-type", cmdSetType);
   table.insert("set-desc", cmdSetDesc);
   table.insert("range", cmdRange);
+  table.insert("optimize", cmdOptimize);
+  table.insert("battle", cmdBattle);
+  table.insert("merge", cmdMerge);
+  table.insert("save", cmdSave);
+  table.insert("load", cmdLoad);
   return table;
 }
