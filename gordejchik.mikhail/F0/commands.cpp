@@ -1,25 +1,12 @@
 #include "commands.hpp"
 #include <algorithm>
 #include <fstream>
+#include <stdexcept>
 #include "backpack.hpp"
 
 static void fail(std::ostream& out)
 {
   out << "<INVALID COMMAND>" << "\n";
-}
-
-static bool parseInt(const std::string& str, int& result)
-{
-  try {
-    size_t pos = 0;
-    result = std::stoi(str, &pos);
-    if (pos != str.size()) {
-      return false;
-    }
-  } catch (...) {
-    return false;
-  }
-  return true;
 }
 
 void gordejchik::cmdCreate(DeckStore& decks,
@@ -88,7 +75,23 @@ void gordejchik::cmdAdd(DeckStore& decks,
   }
   int power = 0;
   int cost = 0;
-  if (!parseInt(powerStr, power) || !parseInt(costStr, cost)) {
+  try {
+    size_t pos = 0;
+    power = std::stoi(powerStr, &pos);
+    if (pos != powerStr.size()) {
+      fail(out);
+      return;
+    }
+    pos = 0;
+    cost = std::stoi(costStr, &pos);
+    if (pos != costStr.size()) {
+      fail(out);
+      return;
+    }
+  } catch (const std::invalid_argument&) {
+    fail(out);
+    return;
+  } catch (const std::out_of_range&) {
     fail(out);
     return;
   }
@@ -233,7 +236,23 @@ void gordejchik::cmdRange(DeckStore& decks,
   }
   int minVal = 0;
   int maxVal = 0;
-  if (!parseInt(minStr, minVal) || !parseInt(maxStr, maxVal)) {
+  try {
+    size_t pos = 0;
+    minVal = std::stoi(minStr, &pos);
+    if (pos != minStr.size()) {
+      fail(out);
+      return;
+    }
+    pos = 0;
+    maxVal = std::stoi(maxStr, &pos);
+    if (pos != maxStr.size()) {
+      fail(out);
+      return;
+    }
+  } catch (const std::invalid_argument&) {
+    fail(out);
+    return;
+  } catch (const std::out_of_range&) {
     fail(out);
     return;
   }
@@ -285,7 +304,21 @@ void gordejchik::cmdOptimize(DeckStore& decks,
     return;
   }
   int budget = 0;
-  if (!parseInt(budgetStr, budget) || budget < 0) {
+  try {
+    size_t pos = 0;
+    budget = std::stoi(budgetStr, &pos);
+    if (pos != budgetStr.size()) {
+      fail(out);
+      return;
+    }
+  } catch (const std::invalid_argument&) {
+    fail(out);
+    return;
+  } catch (const std::out_of_range&) {
+    fail(out);
+    return;
+  }
+  if (budget < 0) {
     fail(out);
     return;
   }
@@ -336,7 +369,21 @@ void gordejchik::cmdBattle(DeckStore& decks,
     return;
   }
   int budget = 0;
-  if (!parseInt(budgetStr, budget) || budget < 0) {
+  try {
+    size_t pos = 0;
+    budget = std::stoi(budgetStr, &pos);
+    if (pos != budgetStr.size()) {
+      fail(out);
+      return;
+    }
+  } catch (const std::invalid_argument&) {
+    fail(out);
+    return;
+  } catch (const std::out_of_range&) {
+    fail(out);
+    return;
+  }
+  if (budget < 0) {
     fail(out);
     return;
   }
@@ -503,8 +550,23 @@ void gordejchik::cmdLoad(DeckStore& decks,
     std::string costStr = header.substr(space2 + 1);
     int power = 0;
     int cost = 0;
-    if (!parseInt(powerStr, power)
-        || !parseInt(costStr, cost)) {
+    try {
+      size_t pos = 0;
+      power = std::stoi(powerStr, &pos);
+      if (pos != powerStr.size()) {
+        fail(out);
+        return;
+      }
+      pos = 0;
+      cost = std::stoi(costStr, &pos);
+      if (pos != costStr.size()) {
+        fail(out);
+        return;
+      }
+    } catch (const std::invalid_argument&) {
+      fail(out);
+      return;
+    } catch (const std::out_of_range&) {
       fail(out);
       return;
     }
