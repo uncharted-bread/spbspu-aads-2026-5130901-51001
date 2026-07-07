@@ -10,8 +10,13 @@ static void fail(std::ostream& out)
 }
 
 void gordejchik::cmdCreate(DeckStore& decks,
-    const std::string& name, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 2) {
+    fail(out);
+    return;
+  }
+  const std::string& name = cmd.tokens_[1];
   if (decks.contains(name)) {
     fail(out);
     return;
@@ -20,8 +25,13 @@ void gordejchik::cmdCreate(DeckStore& decks,
 }
 
 void gordejchik::cmdDelete(DeckStore& decks,
-    const std::string& name, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 2) {
+    fail(out);
+    return;
+  }
+  const std::string& name = cmd.tokens_[1];
   if (!decks.contains(name)) {
     fail(out);
     return;
@@ -29,8 +39,13 @@ void gordejchik::cmdDelete(DeckStore& decks,
   decks.erase(name);
 }
 
-void gordejchik::cmdHelp(std::ostream& out)
+void gordejchik::cmdHelp(DeckStore&,
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 1) {
+    fail(out);
+    return;
+  }
   out << "create <deck>                        "
       << "- создать пустую колоду" << "\n";
   out << "delete <deck>                        "
@@ -120,8 +135,13 @@ void gordejchik::cmdRemove(DeckStore& decks,
 }
 
 void gordejchik::cmdShow(DeckStore& decks,
-    const std::string& name, std::ostream& out)
+    const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count_ != 2) {
+    fail(out);
+    return;
+  }
+  const std::string& name = cmd.tokens_[1];
   if (!decks.contains(name)) {
     fail(out);
     return;
@@ -615,4 +635,15 @@ void gordejchik::cmdLoad(DeckStore& decks,
     deck.cards.insert(cardName, Card{cardName, power, cost, type, desc});
   }
   decks.insert(deckName, deck);
+}
+
+gordejchik::HashTable< std::string, gordejchik::CommandHandler >
+gordejchik::makeCommandTable()
+{
+  HashTable< std::string, CommandHandler > table;
+  table.insert("help", cmdHelp);
+  table.insert("create", cmdCreate);
+  table.insert("delete", cmdDelete);
+  table.insert("show", cmdShow);
+  return table;
 }

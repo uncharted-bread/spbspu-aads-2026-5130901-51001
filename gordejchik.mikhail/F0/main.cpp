@@ -7,6 +7,8 @@
 int main()
 {
   gordejchik::DeckStore decks;
+  using CommandTable = gordejchik::HashTable< std::string, gordejchik::CommandHandler >;
+  const CommandTable commands = gordejchik::makeCommandTable();
   std::string line;
   try {
     while (std::getline(std::cin, line)) {
@@ -18,20 +20,14 @@ int main()
         continue;
       }
       const std::string& name = cmd.tokens_[0];
-      if (name == "help" && cmd.count_ == 1) {
-        gordejchik::cmdHelp(std::cout);
-      } else if (name == "create" && cmd.count_ == 2) {
-        gordejchik::cmdCreate(decks, cmd.tokens_[1], std::cout);
-      } else if (name == "delete" && cmd.count_ == 2) {
-        gordejchik::cmdDelete(decks, cmd.tokens_[1], std::cout);
+      if (commands.contains(name)) {
+        commands.at(name)(decks, cmd, std::cout);
       } else if (name == "add" && cmd.count_ == 5) {
         gordejchik::cmdAdd(decks, cmd.tokens_[1], cmd.tokens_[2],
             cmd.tokens_[3], cmd.tokens_[4], std::cout);
       } else if (name == "remove" && cmd.count_ == 3) {
         gordejchik::cmdRemove(decks, cmd.tokens_[1],
             cmd.tokens_[2], std::cout);
-      } else if (name == "show" && cmd.count_ == 2) {
-        gordejchik::cmdShow(decks, cmd.tokens_[1], std::cout);
       } else if (name == "info" && cmd.count_ == 3) {
         gordejchik::cmdInfo(decks, cmd.tokens_[1],
             cmd.tokens_[2], std::cout);
