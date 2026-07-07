@@ -8,7 +8,7 @@
 
 namespace gordejchik {
 
-  using DeckStore = HashTable< std::string, Deck* >;
+  using DeckStore = HashTable< std::string, Deck >;
 
   void cmdCreate(DeckStore& decks, const std::string& name,
       std::ostream& out);

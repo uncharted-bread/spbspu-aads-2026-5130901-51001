@@ -65,9 +65,5 @@ int main()
       std::cout << "<INVALID COMMAND>" << "\n";
     }
   }
-  using DeckIter = gordejchik::DeckStore::Iterator;
-  for (DeckIter it = decks.begin(); it != decks.end(); ++it) {
-    delete it->second;
-  }
   return 0;
 }
