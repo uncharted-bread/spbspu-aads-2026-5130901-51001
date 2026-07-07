@@ -59,35 +59,40 @@ gordejchik::BackpackResult gordejchik::solveBackpack(
   const size_t n = cardCount;
   const size_t w = static_cast< size_t >(budget);
   const size_t cols = w + 1;
-  int** dp = new int*[n + 1];
-  for (size_t i = 0; i <= n; ++i) {
-    dp[i] = new int[cols]();
-  }
+  int* dp = new int[(n + 1) * cols]();
   for (size_t i = 1; i <= n; ++i) {
     const int cost = allCards[i - 1]->cost;
     const int power = allCards[i - 1]->power;
     for (size_t j = 0; j <= w; ++j) {
-      dp[i][j] = dp[i - 1][j];
+      dp[i * cols + j] = dp[(i - 1) * cols + j];
       if (cost >= 0
           && static_cast< size_t >(cost) <= j
-          && dp[i - 1][j - cost] + power > dp[i][j]) {
-        dp[i][j] = dp[i - 1][j - cost] + power;
+          && dp[(i - 1) * cols + j - cost] + power > dp[i * cols + j]) {
+        dp[i * cols + j] = dp[(i - 1) * cols + j - cost] + power;
       }
     }
   }
-  const int totalPower = dp[n][w];
-  bool* taken = new bool[n]();
+  const int totalPower = dp[n * cols + w];
+  bool* taken = nullptr;
+  Card** chosen = nullptr;
   size_t takenCount = 0;
-  size_t j = w;
-  for (size_t i = n; i >= 1; --i) {
-    if (dp[i][j] != dp[i - 1][j]) {
-      taken[i - 1] = true;
-      const int cost = allCards[i - 1]->cost;
-      j -= static_cast< size_t >(cost);
-      ++takenCount;
+  try {
+    taken = new bool[n]();
+    size_t j = w;
+    for (size_t i = n; i >= 1; --i) {
+      if (dp[i * cols + j] != dp[(i - 1) * cols + j]) {
+        taken[i - 1] = true;
+        const int cost = allCards[i - 1]->cost;
+        j -= static_cast< size_t >(cost);
+        ++takenCount;
+      }
     }
+    chosen = new Card*[takenCount];
+  } catch (...) {
+    delete[] taken;
+    delete[] dp;
+    throw;
   }
-  Card** chosen = new Card*[takenCount];
   size_t idx = 0;
   for (size_t i = 0; i < n; ++i) {
     if (taken[i]) {
@@ -96,9 +101,6 @@ gordejchik::BackpackResult gordejchik::solveBackpack(
     }
   }
   delete[] taken;
-  for (size_t i = 0; i <= n; ++i) {
-    delete[] dp[i];
-  }
   delete[] dp;
   return BackpackResult(chosen, takenCount, totalPower);
 }
