@@ -7,16 +7,9 @@
 
 namespace gordejchik {
 
-  class Deck {
-  public:
-    std::string name_;
-    HashTable< std::string, Card* > cards_;
-
-    explicit Deck(const std::string& name);
-    ~Deck();
-
-    Deck(const Deck&) = delete;
-    Deck& operator=(const Deck&) = delete;
+  struct Deck {
+    std::string name;
+    HashTable< std::string, Card > cards;
   };
 
 }
