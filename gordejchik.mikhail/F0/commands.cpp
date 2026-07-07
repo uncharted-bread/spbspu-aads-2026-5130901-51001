@@ -1,8 +1,7 @@
 #include "commands.hpp"
-#include "backpack.hpp"
 #include <algorithm>
 #include <fstream>
-#include <string>
+#include "backpack.hpp"
 
 static void fail(std::ostream& out)
 {

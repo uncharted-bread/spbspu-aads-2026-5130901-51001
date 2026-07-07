@@ -1,10 +1,10 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
-#include "hashtable.hpp"
-#include "deck.hpp"
+#include <iosfwd>
 #include <string>
-#include <iostream>
+#include "deck.hpp"
+#include "hashtable.hpp"
 
 namespace gordejchik {
 

@@ -1,7 +1,7 @@
-#include "commands.hpp"
-#include "parser.hpp"
 #include <iostream>
 #include <string>
+#include "commands.hpp"
+#include "parser.hpp"
 
 int main()
 {

@@ -1,9 +1,9 @@
 #ifndef HASHTABLE_HPP
 #define HASHTABLE_HPP
 
+#include <cstddef>
 #include <functional>
 #include <stdexcept>
-#include <cstddef>
 
 namespace gordejchik {
 

@@ -1,6 +1,6 @@
+#include <string>
 #include <boost/test/unit_test.hpp>
 #include "backpack.hpp"
-#include <string>
 
 using gordejchik::Card;
 using gordejchik::BackpackResult;

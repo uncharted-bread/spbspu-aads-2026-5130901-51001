@@ -1,9 +1,9 @@
 #ifndef DECK_HPP
 #define DECK_HPP
 
-#include "hashtable.hpp"
-#include "card.hpp"
 #include <string>
+#include "card.hpp"
+#include "hashtable.hpp"
 
 namespace gordejchik {
 

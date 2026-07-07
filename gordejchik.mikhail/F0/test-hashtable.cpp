@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE F0Tests
-#include <boost/test/included/unit_test.hpp>
 #include <string>
+#include <boost/test/included/unit_test.hpp>
 #include "hashtable.hpp"
 
 using gordejchik::HashTable;
