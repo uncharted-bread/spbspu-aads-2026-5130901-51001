@@ -315,20 +315,20 @@ void gordejchik::cmdOptimize(DeckStore& decks,
   );
   BackpackResult res = solveBackpack(allCards, count, budget);
   delete[] allCards;
-  std::string* names = new std::string[res.count_];
-  for (size_t i = 0; i < res.count_; ++i) {
-    names[i] = res.cards_[i]->name;
+  std::string* names = new std::string[res.count()];
+  for (size_t i = 0; i < res.count(); ++i) {
+    names[i] = res.cards()[i]->name;
   }
-  std::sort(names, names + res.count_);
-  for (size_t i = 0; i < res.count_; ++i) {
+  std::sort(names, names + res.count());
+  for (size_t i = 0; i < res.count(); ++i) {
     Card* card = deck->cards_.at(names[i]);
     out << names[i] << ": POWER " << card->power
         << ", COST " << card->cost << "\n";
   }
-  out << "TOTAL POWER: " << res.totalPower_ << "\n";
+  out << "TOTAL POWER: " << res.totalPower() << "\n";
   if (!newDeckName.empty()) {
     Deck* newDeck = new Deck(newDeckName);
-    for (size_t i = 0; i < res.count_; ++i) {
+    for (size_t i = 0; i < res.count(); ++i) {
       Card* src = deck->cards_.at(names[i]);
       Card* copy = new Card{src->name, src->power,
           src->cost, src->type, src->description};
@@ -337,7 +337,6 @@ void gordejchik::cmdOptimize(DeckStore& decks,
     decks.insert(newDeckName, newDeck);
   }
   delete[] names;
-  freeBackpackResult(res);
 }
 
 void gordejchik::cmdBattle(DeckStore& decks,
@@ -388,44 +387,42 @@ void gordejchik::cmdBattle(DeckStore& decks,
   delete[] arr1;
   delete[] arr2;
   out << "=== " << deck1Name << " ===" << "\n";
-  if (res1.count_ > 0) {
-    std::string* names1 = new std::string[res1.count_];
-    for (size_t i = 0; i < res1.count_; ++i) {
-      names1[i] = res1.cards_[i]->name;
+  if (res1.count() > 0) {
+    std::string* names1 = new std::string[res1.count()];
+    for (size_t i = 0; i < res1.count(); ++i) {
+      names1[i] = res1.cards()[i]->name;
     }
-    std::sort(names1, names1 + res1.count_);
-    for (size_t i = 0; i < res1.count_; ++i) {
+    std::sort(names1, names1 + res1.count());
+    for (size_t i = 0; i < res1.count(); ++i) {
       Card* card = deck1->cards_.at(names1[i]);
       out << names1[i] << ": POWER " << card->power
           << ", COST " << card->cost << "\n";
     }
     delete[] names1;
   }
-  out << "TOTAL POWER: " << res1.totalPower_ << "\n";
+  out << "TOTAL POWER: " << res1.totalPower() << "\n";
   out << "=== " << deck2Name << " ===" << "\n";
-  if (res2.count_ > 0) {
-    std::string* names2 = new std::string[res2.count_];
-    for (size_t i = 0; i < res2.count_; ++i) {
-      names2[i] = res2.cards_[i]->name;
+  if (res2.count() > 0) {
+    std::string* names2 = new std::string[res2.count()];
+    for (size_t i = 0; i < res2.count(); ++i) {
+      names2[i] = res2.cards()[i]->name;
     }
-    std::sort(names2, names2 + res2.count_);
-    for (size_t i = 0; i < res2.count_; ++i) {
+    std::sort(names2, names2 + res2.count());
+    for (size_t i = 0; i < res2.count(); ++i) {
       Card* card = deck2->cards_.at(names2[i]);
       out << names2[i] << ": POWER " << card->power
           << ", COST " << card->cost << "\n";
     }
     delete[] names2;
   }
-  out << "TOTAL POWER: " << res2.totalPower_ << "\n";
-  if (res1.totalPower_ > res2.totalPower_) {
+  out << "TOTAL POWER: " << res2.totalPower() << "\n";
+  if (res1.totalPower() > res2.totalPower()) {
     out << "WINNER: " << deck1Name << "\n";
-  } else if (res2.totalPower_ > res1.totalPower_) {
+  } else if (res2.totalPower() > res1.totalPower()) {
     out << "WINNER: " << deck2Name << "\n";
   } else {
     out << "DRAW" << "\n";
   }
-  freeBackpackResult(res1);
-  freeBackpackResult(res2);
 }
 
 void gordejchik::cmdMerge(DeckStore& decks,

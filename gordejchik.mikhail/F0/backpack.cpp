@@ -1,11 +1,60 @@
 #include "backpack.hpp"
 
+gordejchik::BackpackResult::BackpackResult(BackpackResult&& other):
+  cards_(other.cards_),
+  count_(other.count_),
+  totalPower_(other.totalPower_)
+{
+  other.cards_ = nullptr;
+  other.count_ = 0;
+  other.totalPower_ = 0;
+}
+
+gordejchik::BackpackResult::BackpackResult(Card** cards, size_t count, int totalPower):
+  cards_(cards),
+  count_(count),
+  totalPower_(totalPower)
+{}
+
+gordejchik::BackpackResult::~BackpackResult()
+{
+  delete[] cards_;
+}
+
+gordejchik::BackpackResult& gordejchik::BackpackResult::operator=(BackpackResult&& other)
+{
+  if (this != &other) {
+    delete[] cards_;
+    cards_ = other.cards_;
+    count_ = other.count_;
+    totalPower_ = other.totalPower_;
+    other.cards_ = nullptr;
+    other.count_ = 0;
+    other.totalPower_ = 0;
+  }
+  return *this;
+}
+
+gordejchik::Card* const* gordejchik::BackpackResult::cards() const
+{
+  return cards_;
+}
+
+size_t gordejchik::BackpackResult::count() const
+{
+  return count_;
+}
+
+int gordejchik::BackpackResult::totalPower() const
+{
+  return totalPower_;
+}
+
 gordejchik::BackpackResult gordejchik::solveBackpack(
     Card** allCards, size_t cardCount, int budget)
 {
-  BackpackResult result{nullptr, 0, 0};
   if (cardCount == 0 || budget <= 0) {
-    return result;
+    return BackpackResult(nullptr, 0, 0);
   }
   const size_t n = cardCount;
   const size_t w = static_cast< size_t >(budget);
@@ -26,22 +75,23 @@ gordejchik::BackpackResult gordejchik::solveBackpack(
       }
     }
   }
-  result.totalPower_ = dp[n][w];
+  const int totalPower = dp[n][w];
   bool* taken = new bool[n]();
+  size_t takenCount = 0;
   size_t j = w;
   for (size_t i = n; i >= 1; --i) {
     if (dp[i][j] != dp[i - 1][j]) {
       taken[i - 1] = true;
       const int cost = allCards[i - 1]->cost;
       j -= static_cast< size_t >(cost);
-      ++result.count_;
+      ++takenCount;
     }
   }
-  result.cards_ = new Card*[result.count_];
+  Card** chosen = new Card*[takenCount];
   size_t idx = 0;
   for (size_t i = 0; i < n; ++i) {
     if (taken[i]) {
-      result.cards_[idx] = allCards[i];
+      chosen[idx] = allCards[i];
       ++idx;
     }
   }
@@ -50,13 +100,5 @@ gordejchik::BackpackResult gordejchik::solveBackpack(
     delete[] dp[i];
   }
   delete[] dp;
-  return result;
-}
-
-void gordejchik::freeBackpackResult(BackpackResult& result)
-{
-  delete[] result.cards_;
-  result.cards_ = nullptr;
-  result.count_ = 0;
-  result.totalPower_ = 0;
+  return BackpackResult(chosen, takenCount, totalPower);
 }
