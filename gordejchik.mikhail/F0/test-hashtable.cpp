@@ -124,6 +124,79 @@ BOOST_AUTO_TEST_CASE(moveConstructor)
   BOOST_TEST(ht.size() == 0u);
 }
 
+BOOST_AUTO_TEST_CASE(emptyTableIteration)
+{
+  HashTable< std::string, int > ht;
+  BOOST_TEST((ht.begin() == ht.end()));
+  BOOST_TEST((ht.cbegin() == ht.cend()));
+}
+
+BOOST_AUTO_TEST_CASE(iteratorTraversal)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("a", 1);
+  ht.insert("b", 2);
+  ht.insert("c", 3);
+
+  using Iter = HashTable< std::string, int >::Iterator;
+  int sum = 0;
+  size_t visited = 0;
+  for (Iter it = ht.begin(); it != ht.end(); ++it) {
+    sum += it->second;
+    ++visited;
+  }
+  BOOST_TEST(sum == 6);
+  BOOST_TEST(visited == 3u);
+}
+
+BOOST_AUTO_TEST_CASE(iteratorWriteAccess)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("key", 1);
+
+  using Iter = HashTable< std::string, int >::Iterator;
+  Iter it = ht.begin();
+  (*it).second = 42;
+  BOOST_TEST(ht.at("key") == 42);
+}
+
+BOOST_AUTO_TEST_CASE(postIncrementReturnsOldPosition)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("only", 7);
+
+  using Iter = HashTable< std::string, int >::Iterator;
+  Iter it = ht.begin();
+  Iter old = it++;
+  BOOST_TEST(old->second == 7);
+  BOOST_TEST((it == ht.end()));
+}
+
+BOOST_AUTO_TEST_CASE(constIteration)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("x", 10);
+  ht.insert("y", 20);
+
+  const HashTable< std::string, int >& ref = ht;
+  using CIter = HashTable< std::string, int >::ConstIterator;
+  int sum = 0;
+  for (CIter it = ref.begin(); it != ref.end(); ++it) {
+    sum += it->second;
+  }
+  BOOST_TEST(sum == 30);
+}
+
+BOOST_AUTO_TEST_CASE(iteratorConvertsToConstIterator)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("z", 5);
+
+  using CIter = HashTable< std::string, int >::ConstIterator;
+  CIter cit = ht.begin();
+  BOOST_TEST(cit->second == 5);
+}
+
 BOOST_AUTO_TEST_CASE(forEachTraversal)
 {
   HashTable< std::string, int > ht;

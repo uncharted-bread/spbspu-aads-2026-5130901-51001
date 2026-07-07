@@ -15,6 +15,9 @@ namespace gordejchik {
   public:
     using value_type = std::pair< Key, Value >;
 
+    class Iterator;
+    class ConstIterator;
+
     HashTable();
     explicit HashTable(size_t capacity);
     HashTable(const HashTable& other);
@@ -33,6 +36,13 @@ namespace gordejchik {
     size_t size() const;
     bool empty() const;
     size_t capacity() const;
+
+    Iterator begin();
+    Iterator end();
+    ConstIterator begin() const;
+    ConstIterator end() const;
+    ConstIterator cbegin() const;
+    ConstIterator cend() const;
 
     template< class F >
     F forEach(F func) const;
@@ -57,6 +67,46 @@ namespace gordejchik {
     bool shouldGrow() const;
     void rehash(size_t newCapacity);
     void insertInto(Slot* target, size_t cap, Key key, Value value);
+  };
+
+  template< class Key, class Value, class Hash, class Equal >
+  class HashTable< Key, Value, Hash, Equal >::Iterator {
+    friend class HashTable;
+  public:
+    value_type& operator*() const;
+    value_type* operator->() const;
+    Iterator& operator++();
+    Iterator operator++(int);
+    bool operator==(const Iterator& rhs) const;
+    bool operator!=(const Iterator& rhs) const;
+
+  private:
+    Slot* current_;
+    Slot* end_;
+
+    Iterator(Slot* current, Slot* end);
+    void skipEmpty();
+  };
+
+  template< class Key, class Value, class Hash, class Equal >
+  class HashTable< Key, Value, Hash, Equal >::ConstIterator {
+    friend class HashTable;
+  public:
+    ConstIterator(const Iterator& it);
+
+    const value_type& operator*() const;
+    const value_type* operator->() const;
+    ConstIterator& operator++();
+    ConstIterator operator++(int);
+    bool operator==(const ConstIterator& rhs) const;
+    bool operator!=(const ConstIterator& rhs) const;
+
+  private:
+    const Slot* current_;
+    const Slot* end_;
+
+    ConstIterator(const Slot* current, const Slot* end);
+    void skipEmpty();
   };
 
   template< class Key, class Value, class Hash, class Equal >
@@ -330,6 +380,183 @@ namespace gordejchik {
       }
     }
     return func;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  HashTable< Key, Value, Hash, Equal >::Iterator::Iterator(
+      Slot* current, Slot* end):
+    current_(current),
+    end_(end)
+  {}
+
+  template< class Key, class Value, class Hash, class Equal >
+  void HashTable< Key, Value, Hash, Equal >::Iterator::skipEmpty()
+  {
+    while (current_ != end_ && !current_->occupied_) {
+      ++current_;
+    }
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::value_type&
+  HashTable< Key, Value, Hash, Equal >::Iterator::operator*() const
+  {
+    return current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::value_type*
+  HashTable< Key, Value, Hash, Equal >::Iterator::operator->() const
+  {
+    return &current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::Iterator&
+  HashTable< Key, Value, Hash, Equal >::Iterator::operator++()
+  {
+    ++current_;
+    skipEmpty();
+    return *this;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::Iterator
+  HashTable< Key, Value, Hash, Equal >::Iterator::operator++(int)
+  {
+    Iterator tmp = *this;
+    ++(*this);
+    return tmp;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool HashTable< Key, Value, Hash, Equal >::Iterator::operator==(
+      const Iterator& rhs) const
+  {
+    return current_ == rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool HashTable< Key, Value, Hash, Equal >::Iterator::operator!=(
+      const Iterator& rhs) const
+  {
+    return current_ != rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  HashTable< Key, Value, Hash, Equal >::ConstIterator::ConstIterator(
+      const Iterator& it):
+    current_(it.current_),
+    end_(it.end_)
+  {}
+
+  template< class Key, class Value, class Hash, class Equal >
+  HashTable< Key, Value, Hash, Equal >::ConstIterator::ConstIterator(
+      const Slot* current, const Slot* end):
+    current_(current),
+    end_(end)
+  {}
+
+  template< class Key, class Value, class Hash, class Equal >
+  void HashTable< Key, Value, Hash, Equal >::ConstIterator::skipEmpty()
+  {
+    while (current_ != end_ && !current_->occupied_) {
+      ++current_;
+    }
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  const typename HashTable< Key, Value, Hash, Equal >::value_type&
+  HashTable< Key, Value, Hash, Equal >::ConstIterator::operator*() const
+  {
+    return current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  const typename HashTable< Key, Value, Hash, Equal >::value_type*
+  HashTable< Key, Value, Hash, Equal >::ConstIterator::operator->() const
+  {
+    return &current_->data_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::ConstIterator&
+  HashTable< Key, Value, Hash, Equal >::ConstIterator::operator++()
+  {
+    ++current_;
+    skipEmpty();
+    return *this;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::ConstIterator
+  HashTable< Key, Value, Hash, Equal >::ConstIterator::operator++(int)
+  {
+    ConstIterator tmp = *this;
+    ++(*this);
+    return tmp;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool HashTable< Key, Value, Hash, Equal >::ConstIterator::operator==(
+      const ConstIterator& rhs) const
+  {
+    return current_ == rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool HashTable< Key, Value, Hash, Equal >::ConstIterator::operator!=(
+      const ConstIterator& rhs) const
+  {
+    return current_ != rhs.current_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::Iterator
+  HashTable< Key, Value, Hash, Equal >::begin()
+  {
+    Iterator result(slots_, slots_ + capacity_);
+    result.skipEmpty();
+    return result;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::Iterator
+  HashTable< Key, Value, Hash, Equal >::end()
+  {
+    Slot* stop = slots_ + capacity_;
+    return Iterator(stop, stop);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::ConstIterator
+  HashTable< Key, Value, Hash, Equal >::begin() const
+  {
+    ConstIterator result(slots_, slots_ + capacity_);
+    result.skipEmpty();
+    return result;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::ConstIterator
+  HashTable< Key, Value, Hash, Equal >::end() const
+  {
+    const Slot* stop = slots_ + capacity_;
+    return ConstIterator(stop, stop);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::ConstIterator
+  HashTable< Key, Value, Hash, Equal >::cbegin() const
+  {
+    return begin();
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::ConstIterator
+  HashTable< Key, Value, Hash, Equal >::cend() const
+  {
+    return end();
   }
 }
 
