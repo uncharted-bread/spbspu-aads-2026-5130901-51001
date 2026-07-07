@@ -15,8 +15,8 @@ gordejchik::BackpackResult gordejchik::solveBackpack(
     dp[i] = new int[cols]();
   }
   for (size_t i = 1; i <= n; ++i) {
-    const int cost = allCards[i - 1]->cost_;
-    const int power = allCards[i - 1]->power_;
+    const int cost = allCards[i - 1]->cost;
+    const int power = allCards[i - 1]->power;
     for (size_t j = 0; j <= w; ++j) {
       dp[i][j] = dp[i - 1][j];
       if (cost >= 0
@@ -32,7 +32,7 @@ gordejchik::BackpackResult gordejchik::solveBackpack(
   for (size_t i = n; i >= 1; --i) {
     if (dp[i][j] != dp[i - 1][j]) {
       taken[i - 1] = true;
-      const int cost = allCards[i - 1]->cost_;
+      const int cost = allCards[i - 1]->cost;
       j -= static_cast< size_t >(cost);
       ++result.count_;
     }

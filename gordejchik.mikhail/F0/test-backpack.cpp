@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(singleCardFits)
   BackpackResult res = solveBackpack(arr, 1, 5);
   BOOST_TEST(res.count_ == 1u);
   BOOST_TEST(res.totalPower_ == 15);
-  BOOST_TEST(res.cards_[0]->name_ == "sword");
+  BOOST_TEST(res.cards_[0]->name == "sword");
   freeBackpackResult(res);
 }
 

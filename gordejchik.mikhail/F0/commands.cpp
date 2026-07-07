@@ -161,8 +161,8 @@ void gordejchik::cmdShow(DeckStore& decks,
   std::sort(names, names + count);
   for (size_t i = 0; i < count; ++i) {
     Card* card = deck->cards_.at(names[i]);
-    out << names[i] << ": POWER " << card->power_
-        << ", COST " << card->cost_ << "\n";
+    out << names[i] << ": POWER " << card->power
+        << ", COST " << card->cost << "\n";
   }
   delete[] names;
   ok("Колода '" + name + "': " + std::to_string(count) + " карт");
@@ -182,7 +182,7 @@ void gordejchik::cmdInfo(DeckStore& decks,
     return;
   }
   const Card* card = deck->cards_.at(cardName);
-  std::string upper = card->name_;
+  std::string upper = card->name;
   for (size_t i = 0; i < upper.size(); ++i) {
     if (upper[i] >= 'a' && upper[i] <= 'z') {
       upper[i] = upper[i] - 'a' + 'A';
@@ -190,18 +190,18 @@ void gordejchik::cmdInfo(DeckStore& decks,
   }
   std::string header = "=== " + upper + " ===";
   out << header << "\n";
-  if (card->type_.empty()) {
+  if (card->type.empty()) {
     out << "TYPE: <none>" << "\n";
   } else {
-    out << "TYPE: " << card->type_ << "\n";
+    out << "TYPE: " << card->type << "\n";
   }
-  out << "POWER: " << card->power_
-      << ", COST: " << card->cost_ << "\n";
+  out << "POWER: " << card->power
+      << ", COST: " << card->cost << "\n";
   out << "DATA:" << "\n";
-  if (card->description_.empty()) {
+  if (card->description.empty()) {
     out << "<no data>" << "\n";
   } else {
-    out << card->description_ << "\n";
+    out << card->description << "\n";
   }
   std::string footer(header.size(), '=');
   out << footer << "\n";
@@ -222,7 +222,7 @@ void gordejchik::cmdSetType(DeckStore& decks,
     fail(out);
     return;
   }
-  deck->cards_.at(cardName)->type_ = type;
+  deck->cards_.at(cardName)->type = type;
   ok("Тип карты '" + cardName + "' установлен");
 }
 
@@ -240,7 +240,7 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
     fail(out);
     return;
   }
-  deck->cards_.at(cardName)->description_ = desc;
+  deck->cards_.at(cardName)->description = desc;
   ok("Описание карты '" + cardName + "' установлено");
 }
 
@@ -280,7 +280,7 @@ void gordejchik::cmdRange(DeckStore& decks,
     [&names, &found, usePower, minVal, maxVal](
         const std::string& key, Card* card)
     {
-      const int val = usePower ? card->power_ : card->cost_;
+      const int val = usePower ? card->power : card->cost;
       if (val >= minVal && val <= maxVal) {
         names[found] = key;
         ++found;
@@ -295,8 +295,8 @@ void gordejchik::cmdRange(DeckStore& decks,
   std::sort(names, names + found);
   for (size_t i = 0; i < found; ++i) {
     Card* card = deck->cards_.at(names[i]);
-    out << names[i] << ": POWER " << card->power_
-        << ", COST " << card->cost_ << "\n";
+    out << names[i] << ": POWER " << card->power
+        << ", COST " << card->cost << "\n";
   }
   delete[] names;
   ok("Найдено карт: " + std::to_string(found));
@@ -339,13 +339,13 @@ void gordejchik::cmdOptimize(DeckStore& decks,
   delete[] allCards;
   std::string* names = new std::string[res.count_];
   for (size_t i = 0; i < res.count_; ++i) {
-    names[i] = res.cards_[i]->name_;
+    names[i] = res.cards_[i]->name;
   }
   std::sort(names, names + res.count_);
   for (size_t i = 0; i < res.count_; ++i) {
     Card* card = deck->cards_.at(names[i]);
-    out << names[i] << ": POWER " << card->power_
-        << ", COST " << card->cost_ << "\n";
+    out << names[i] << ": POWER " << card->power
+        << ", COST " << card->cost << "\n";
   }
   out << "TOTAL POWER: " << res.totalPower_ << "\n";
   ok("Оптимизация завершена, бюджет: " + budgetStr);
@@ -353,9 +353,9 @@ void gordejchik::cmdOptimize(DeckStore& decks,
     Deck* newDeck = new Deck(newDeckName);
     for (size_t i = 0; i < res.count_; ++i) {
       Card* src = deck->cards_.at(names[i]);
-      Card* copy = new Card{src->name_, src->power_,
-          src->cost_, src->type_, src->description_};
-      newDeck->cards_.insert(copy->name_, copy);
+      Card* copy = new Card{src->name, src->power,
+          src->cost, src->type, src->description};
+      newDeck->cards_.insert(copy->name, copy);
     }
     decks.insert(newDeckName, newDeck);
   }
@@ -414,13 +414,13 @@ void gordejchik::cmdBattle(DeckStore& decks,
   if (res1.count_ > 0) {
     std::string* names1 = new std::string[res1.count_];
     for (size_t i = 0; i < res1.count_; ++i) {
-      names1[i] = res1.cards_[i]->name_;
+      names1[i] = res1.cards_[i]->name;
     }
     std::sort(names1, names1 + res1.count_);
     for (size_t i = 0; i < res1.count_; ++i) {
       Card* card = deck1->cards_.at(names1[i]);
-      out << names1[i] << ": POWER " << card->power_
-          << ", COST " << card->cost_ << "\n";
+      out << names1[i] << ": POWER " << card->power
+          << ", COST " << card->cost << "\n";
     }
     delete[] names1;
   }
@@ -429,13 +429,13 @@ void gordejchik::cmdBattle(DeckStore& decks,
   if (res2.count_ > 0) {
     std::string* names2 = new std::string[res2.count_];
     for (size_t i = 0; i < res2.count_; ++i) {
-      names2[i] = res2.cards_[i]->name_;
+      names2[i] = res2.cards_[i]->name;
     }
     std::sort(names2, names2 + res2.count_);
     for (size_t i = 0; i < res2.count_; ++i) {
       Card* card = deck2->cards_.at(names2[i]);
-      out << names2[i] << ": POWER " << card->power_
-          << ", COST " << card->cost_ << "\n";
+      out << names2[i] << ": POWER " << card->power
+          << ", COST " << card->cost << "\n";
     }
     delete[] names2;
   }
@@ -471,18 +471,18 @@ void gordejchik::cmdMerge(DeckStore& decks,
   d1->cards_.forEach(
     [&merged](const std::string&, Card* card)
     {
-      Card* copy = new Card{card->name_, card->power_,
-          card->cost_, card->type_, card->description_};
-      merged->cards_.insert(copy->name_, copy);
+      Card* copy = new Card{card->name, card->power,
+          card->cost, card->type, card->description};
+      merged->cards_.insert(copy->name, copy);
     }
   );
   d2->cards_.forEach(
     [&merged](const std::string&, Card* card)
     {
-      if (!merged->cards_.contains(card->name_)) {
-        Card* copy = new Card{card->name_, card->power_,
-            card->cost_, card->type_, card->description_};
-        merged->cards_.insert(copy->name_, copy);
+      if (!merged->cards_.contains(card->name)) {
+        Card* copy = new Card{card->name, card->power,
+            card->cost, card->type, card->description};
+        merged->cards_.insert(copy->name, copy);
       }
     }
   );
@@ -509,11 +509,11 @@ void gordejchik::cmdSave(DeckStore& decks,
   deck->cards_.forEach(
     [&file](const std::string&, Card* card)
     {
-      file << card->name_ << " "
-          << card->power_ << " "
-          << card->cost_ << "\n";
-      file << card->type_ << "\n";
-      file << card->description_ << "\n";
+      file << card->name << " "
+          << card->power << " "
+          << card->cost << "\n";
+      file << card->type << "\n";
+      file << card->description << "\n";
     }
   );
   ok("Колода сохранена в '" + filename + "'");

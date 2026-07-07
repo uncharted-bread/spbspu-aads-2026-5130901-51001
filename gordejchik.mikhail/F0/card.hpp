@@ -6,11 +6,11 @@
 namespace gordejchik {
 
   struct Card {
-    std::string name_;
-    int power_;
-    int cost_;
-    std::string type_;
-    std::string description_;
+    std::string name;
+    int power;
+    int cost;
+    std::string type;
+    std::string description;
   };
 }
 #endif
