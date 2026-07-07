@@ -22,25 +22,6 @@ int main()
       const std::string& name = cmd.tokens_[0];
       if (commands.contains(name)) {
         commands.at(name)(decks, cmd, std::cout);
-      } else if (name == "add" && cmd.count_ == 5) {
-        gordejchik::cmdAdd(decks, cmd.tokens_[1], cmd.tokens_[2],
-            cmd.tokens_[3], cmd.tokens_[4], std::cout);
-      } else if (name == "remove" && cmd.count_ == 3) {
-        gordejchik::cmdRemove(decks, cmd.tokens_[1],
-            cmd.tokens_[2], std::cout);
-      } else if (name == "info" && cmd.count_ == 3) {
-        gordejchik::cmdInfo(decks, cmd.tokens_[1],
-            cmd.tokens_[2], std::cout);
-      } else if (name == "set-type" && cmd.count_ == 4) {
-        gordejchik::cmdSetType(decks, cmd.tokens_[1],
-            cmd.tokens_[2], cmd.tokens_[3], std::cout);
-      } else if (name == "set-desc" && cmd.count_ == 4) {
-        gordejchik::cmdSetDesc(decks, cmd.tokens_[1],
-            cmd.tokens_[2], cmd.tokens_[3], std::cout);
-      } else if (name == "range" && cmd.count_ == 5) {
-        gordejchik::cmdRange(decks, cmd.tokens_[1],
-            cmd.tokens_[2], cmd.tokens_[3], cmd.tokens_[4],
-            std::cout);
       } else if (name == "optimize" && cmd.count_ == 3) {
         gordejchik::cmdOptimize(decks, cmd.tokens_[1],
             cmd.tokens_[2], "", std::cout);
