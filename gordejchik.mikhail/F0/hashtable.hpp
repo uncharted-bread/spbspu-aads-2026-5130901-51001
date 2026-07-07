@@ -87,8 +87,13 @@ namespace gordejchik {
     hash_(other.hash_),
     equal_(other.equal_)
   {
-    for (size_t i = 0; i < capacity_; ++i) {
-      slots_[i] = other.slots_[i];
+    try {
+      for (size_t i = 0; i < capacity_; ++i) {
+        slots_[i] = other.slots_[i];
+      }
+    } catch (...) {
+      delete[] slots_;
+      throw;
     }
     size_ = other.size_;
   }
@@ -120,8 +125,13 @@ namespace gordejchik {
   {
     if (this != &other) {
       Slot* newSlots = new Slot[other.capacity_]();
-      for (size_t i = 0; i < other.capacity_; ++i) {
-        newSlots[i] = other.slots_[i];
+      try {
+        for (size_t i = 0; i < other.capacity_; ++i) {
+          newSlots[i] = other.slots_[i];
+        }
+      } catch (...) {
+        delete[] newSlots;
+        throw;
       }
       delete[] slots_;
       slots_ = newSlots;
