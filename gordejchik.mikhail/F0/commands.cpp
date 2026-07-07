@@ -132,17 +132,22 @@ void gordejchik::cmdShow(DeckStore& decks,
     return;
   }
   std::string* names = new std::string[count];
-  size_t idx = 0;
-  using CardCIter = HashTable< std::string, Card >::ConstIterator;
-  for (CardCIter it = deck.cards.cbegin(); it != deck.cards.cend(); ++it) {
-    names[idx] = it->first;
-    ++idx;
-  }
-  std::sort(names, names + count);
-  for (size_t i = 0; i < count; ++i) {
-    const Card& card = deck.cards.at(names[i]);
-    out << names[i] << ": POWER " << card.power
-        << ", COST " << card.cost << "\n";
+  try {
+    size_t idx = 0;
+    using CardCIter = HashTable< std::string, Card >::ConstIterator;
+    for (CardCIter it = deck.cards.cbegin(); it != deck.cards.cend(); ++it) {
+      names[idx] = it->first;
+      ++idx;
+    }
+    std::sort(names, names + count);
+    for (size_t i = 0; i < count; ++i) {
+      const Card& card = deck.cards.at(names[i]);
+      out << names[i] << ": POWER " << card.power
+          << ", COST " << card.cost << "\n";
+    }
+  } catch (...) {
+    delete[] names;
+    throw;
   }
   delete[] names;
 }
@@ -266,26 +271,27 @@ void gordejchik::cmdRange(DeckStore& decks,
     return;
   }
   std::string* names = new std::string[total];
-  size_t found = 0;
-  const bool usePower = (stat == "power");
-  using CardCIter = HashTable< std::string, Card >::ConstIterator;
-  for (CardCIter it = deck.cards.cbegin(); it != deck.cards.cend(); ++it) {
-    const Card& card = it->second;
-    const int val = usePower ? card.power : card.cost;
-    if (val >= minVal && val <= maxVal) {
-      names[found] = it->first;
-      ++found;
+  try {
+    size_t found = 0;
+    const bool usePower = (stat == "power");
+    using CardCIter = HashTable< std::string, Card >::ConstIterator;
+    for (CardCIter it = deck.cards.cbegin(); it != deck.cards.cend(); ++it) {
+      const Card& card = it->second;
+      const int val = usePower ? card.power : card.cost;
+      if (val >= minVal && val <= maxVal) {
+        names[found] = it->first;
+        ++found;
+      }
     }
-  }
-  if (found == 0) {
+    std::sort(names, names + found);
+    for (size_t i = 0; i < found; ++i) {
+      const Card& card = deck.cards.at(names[i]);
+      out << names[i] << ": POWER " << card.power
+          << ", COST " << card.cost << "\n";
+    }
+  } catch (...) {
     delete[] names;
-    return;
-  }
-  std::sort(names, names + found);
-  for (size_t i = 0; i < found; ++i) {
-    const Card& card = deck.cards.at(names[i]);
-    out << names[i] << ": POWER " << card.power
-        << ", COST " << card.cost << "\n";
+    throw;
   }
   delete[] names;
 }
@@ -335,25 +341,36 @@ void gordejchik::cmdOptimize(DeckStore& decks,
     allCards[idx] = &it->second;
     ++idx;
   }
-  BackpackResult res = solveBackpack(allCards, count, budget);
+  BackpackResult res(nullptr, 0, 0);
+  try {
+    res = solveBackpack(allCards, count, budget);
+  } catch (...) {
+    delete[] allCards;
+    throw;
+  }
   delete[] allCards;
   std::string* names = new std::string[res.count()];
-  for (size_t i = 0; i < res.count(); ++i) {
-    names[i] = res.cards()[i]->name;
-  }
-  std::sort(names, names + res.count());
-  for (size_t i = 0; i < res.count(); ++i) {
-    const Card& card = deck.cards.at(names[i]);
-    out << names[i] << ": POWER " << card.power
-        << ", COST " << card.cost << "\n";
-  }
-  out << "TOTAL POWER: " << res.totalPower() << "\n";
-  if (!newDeckName.empty()) {
-    Deck newDeck{newDeckName, {}};
+  try {
     for (size_t i = 0; i < res.count(); ++i) {
-      newDeck.cards.insert(names[i], deck.cards.at(names[i]));
+      names[i] = res.cards()[i]->name;
     }
-    decks.insert(newDeckName, newDeck);
+    std::sort(names, names + res.count());
+    for (size_t i = 0; i < res.count(); ++i) {
+      const Card& card = deck.cards.at(names[i]);
+      out << names[i] << ": POWER " << card.power
+          << ", COST " << card.cost << "\n";
+    }
+    out << "TOTAL POWER: " << res.totalPower() << "\n";
+    if (!newDeckName.empty()) {
+      Deck newDeck{newDeckName, {}};
+      for (size_t i = 0; i < res.count(); ++i) {
+        newDeck.cards.insert(names[i], deck.cards.at(names[i]));
+      }
+      decks.insert(newDeckName, newDeck);
+    }
+  } catch (...) {
+    delete[] names;
+    throw;
   }
   delete[] names;
 }
@@ -393,38 +410,51 @@ void gordejchik::cmdBattle(DeckStore& decks,
   const size_t count2 = deck2.cards.size();
   Card** arr1 = nullptr;
   Card** arr2 = nullptr;
+  BackpackResult res1(nullptr, 0, 0);
+  BackpackResult res2(nullptr, 0, 0);
   using CardIter = HashTable< std::string, Card >::Iterator;
-  if (count1 > 0) {
-    arr1 = new Card*[count1];
-    size_t idx = 0;
-    for (CardIter it = deck1.cards.begin(); it != deck1.cards.end(); ++it) {
-      arr1[idx] = &it->second;
-      ++idx;
+  try {
+    if (count1 > 0) {
+      arr1 = new Card*[count1];
+      size_t idx = 0;
+      for (CardIter it = deck1.cards.begin(); it != deck1.cards.end(); ++it) {
+        arr1[idx] = &it->second;
+        ++idx;
+      }
     }
-  }
-  if (count2 > 0) {
-    arr2 = new Card*[count2];
-    size_t idx = 0;
-    for (CardIter it = deck2.cards.begin(); it != deck2.cards.end(); ++it) {
-      arr2[idx] = &it->second;
-      ++idx;
+    if (count2 > 0) {
+      arr2 = new Card*[count2];
+      size_t idx = 0;
+      for (CardIter it = deck2.cards.begin(); it != deck2.cards.end(); ++it) {
+        arr2[idx] = &it->second;
+        ++idx;
+      }
     }
+    res1 = solveBackpack(arr1, count1, budget);
+    res2 = solveBackpack(arr2, count2, budget);
+  } catch (...) {
+    delete[] arr1;
+    delete[] arr2;
+    throw;
   }
-  BackpackResult res1 = solveBackpack(arr1, count1, budget);
-  BackpackResult res2 = solveBackpack(arr2, count2, budget);
   delete[] arr1;
   delete[] arr2;
   out << "=== " << deck1Name << " ===" << "\n";
   if (res1.count() > 0) {
     std::string* names1 = new std::string[res1.count()];
-    for (size_t i = 0; i < res1.count(); ++i) {
-      names1[i] = res1.cards()[i]->name;
-    }
-    std::sort(names1, names1 + res1.count());
-    for (size_t i = 0; i < res1.count(); ++i) {
-      const Card& card = deck1.cards.at(names1[i]);
-      out << names1[i] << ": POWER " << card.power
-          << ", COST " << card.cost << "\n";
+    try {
+      for (size_t i = 0; i < res1.count(); ++i) {
+        names1[i] = res1.cards()[i]->name;
+      }
+      std::sort(names1, names1 + res1.count());
+      for (size_t i = 0; i < res1.count(); ++i) {
+        const Card& card = deck1.cards.at(names1[i]);
+        out << names1[i] << ": POWER " << card.power
+            << ", COST " << card.cost << "\n";
+      }
+    } catch (...) {
+      delete[] names1;
+      throw;
     }
     delete[] names1;
   }
@@ -432,14 +462,19 @@ void gordejchik::cmdBattle(DeckStore& decks,
   out << "=== " << deck2Name << " ===" << "\n";
   if (res2.count() > 0) {
     std::string* names2 = new std::string[res2.count()];
-    for (size_t i = 0; i < res2.count(); ++i) {
-      names2[i] = res2.cards()[i]->name;
-    }
-    std::sort(names2, names2 + res2.count());
-    for (size_t i = 0; i < res2.count(); ++i) {
-      const Card& card = deck2.cards.at(names2[i]);
-      out << names2[i] << ": POWER " << card.power
-          << ", COST " << card.cost << "\n";
+    try {
+      for (size_t i = 0; i < res2.count(); ++i) {
+        names2[i] = res2.cards()[i]->name;
+      }
+      std::sort(names2, names2 + res2.count());
+      for (size_t i = 0; i < res2.count(); ++i) {
+        const Card& card = deck2.cards.at(names2[i]);
+        out << names2[i] << ": POWER " << card.power
+            << ", COST " << card.cost << "\n";
+      }
+    } catch (...) {
+      delete[] names2;
+      throw;
     }
     delete[] names2;
   }
