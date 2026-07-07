@@ -1,5 +1,4 @@
-#define BOOST_TEST_MODULE BackpackTest
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 #include "backpack.hpp"
 #include <string>
 
