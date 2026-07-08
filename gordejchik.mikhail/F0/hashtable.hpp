@@ -366,6 +366,7 @@ namespace gordejchik {
       idx = (idx + 1) % cap;
     }
   }
+
   template< class Key, class Value, class Hash, class Equal >
   HashTable< Key, Value, Hash, Equal >::Iterator::Iterator(
       Slot* current, Slot* end):
