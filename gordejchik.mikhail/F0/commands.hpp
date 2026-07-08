@@ -1,13 +1,22 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
+#include <cstddef>
 #include <iosfwd>
 #include <string>
 #include "deck.hpp"
 #include "hashtable.hpp"
-#include "parser.hpp"
 
 namespace gordejchik {
+
+  const size_t MAX_TOKENS = 10;
+
+  struct ParsedCommand {
+    std::string tokens[MAX_TOKENS];
+    size_t count;
+  };
+
+  ParsedCommand parseLine(const std::string& line);
 
   using DeckStore = HashTable< std::string, Deck >;
   using CommandHandler = void(*)(DeckStore&, const ParsedCommand&, std::ostream&);

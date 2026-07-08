@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include "commands.hpp"
-#include "parser.hpp"
 
 int main()
 {
@@ -16,10 +15,10 @@ int main()
         continue;
       }
       gordejchik::ParsedCommand cmd = gordejchik::parseLine(line);
-      if (cmd.count_ == 0) {
+      if (cmd.count == 0) {
         continue;
       }
-      const std::string& name = cmd.tokens_[0];
+      const std::string& name = cmd.tokens[0];
       if (commands.contains(name)) {
         commands.at(name)(decks, cmd, std::cout);
       } else {
