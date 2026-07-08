@@ -9,12 +9,12 @@ namespace gordejchik {
   class BackpackResult {
   public:
     BackpackResult(const BackpackResult&) = delete;
-    BackpackResult(BackpackResult&& other);
+    BackpackResult(BackpackResult&& other) noexcept;
     BackpackResult(Card** cards, size_t count, int totalPower);
     ~BackpackResult();
 
     BackpackResult& operator=(const BackpackResult&) = delete;
-    BackpackResult& operator=(BackpackResult&& other);
+    BackpackResult& operator=(BackpackResult&& other) noexcept;
 
     Card* const* cards() const;
     size_t count() const;

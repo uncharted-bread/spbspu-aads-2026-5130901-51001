@@ -21,11 +21,11 @@ namespace gordejchik {
     HashTable();
     explicit HashTable(size_t capacity);
     HashTable(const HashTable& other);
-    HashTable(HashTable&& other);
+    HashTable(HashTable&& other) noexcept;
     ~HashTable();
 
     HashTable& operator=(const HashTable& other);
-    HashTable& operator=(HashTable&& other);
+    HashTable& operator=(HashTable&& other) noexcept;
 
     void insert(const Key& key, const Value& value);
     Value& at(const Key& key);
@@ -45,8 +45,8 @@ namespace gordejchik {
     ConstIterator cend() const;
 
   private:
-    static const size_t DEFAULT_CAPACITY = 16;
-    static const size_t GROW_FACTOR = 2;
+    static constexpr size_t DEFAULT_CAPACITY = 16;
+    static constexpr size_t GROW_FACTOR = 2;
 
     struct Slot {
       value_type data_;
@@ -149,7 +149,7 @@ namespace gordejchik {
 
   template< class Key, class Value, class Hash, class Equal >
   HashTable< Key, Value, Hash, Equal >::HashTable(
-      HashTable&& other):
+      HashTable&& other) noexcept:
     slots_(other.slots_),
     capacity_(other.capacity_),
     size_(other.size_),
@@ -195,7 +195,7 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   HashTable< Key, Value, Hash, Equal >&
   HashTable< Key, Value, Hash, Equal >::operator=(
-      HashTable&& other)
+      HashTable&& other) noexcept
   {
     if (this != &other) {
       delete[] slots_;
@@ -293,7 +293,7 @@ namespace gordejchik {
         break;
       }
       slots_[i] = std::move(slots_[j]);
-      slots_[i].psl_--;
+      --slots_[i].psl_;
       i = j;
     }
     slots_[i].occupied_ = false;

@@ -248,7 +248,7 @@ void gordejchik::cmdInfo(DeckStore& decks,
   std::string upper = card.name;
   for (size_t i = 0; i < upper.size(); ++i) {
     if (upper[i] >= 'a' && upper[i] <= 'z') {
-      upper[i] = upper[i] - 'a' + 'A';
+      upper[i] = static_cast< char >(upper[i] - 'a' + 'A');
     }
   }
   std::string header = "=== " + upper + " ===";

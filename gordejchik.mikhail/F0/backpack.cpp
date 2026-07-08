@@ -1,6 +1,6 @@
 #include "backpack.hpp"
 
-gordejchik::BackpackResult::BackpackResult(BackpackResult&& other):
+gordejchik::BackpackResult::BackpackResult(BackpackResult&& other) noexcept:
   cards_(other.cards_),
   count_(other.count_),
   totalPower_(other.totalPower_)
@@ -21,7 +21,7 @@ gordejchik::BackpackResult::~BackpackResult()
   delete[] cards_;
 }
 
-gordejchik::BackpackResult& gordejchik::BackpackResult::operator=(BackpackResult&& other)
+gordejchik::BackpackResult& gordejchik::BackpackResult::operator=(BackpackResult&& other) noexcept
 {
   if (this != &other) {
     delete[] cards_;
