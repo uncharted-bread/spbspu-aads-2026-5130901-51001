@@ -1,6 +1,7 @@
 #include "commands.hpp"
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include "backpack.hpp"
 
@@ -61,6 +62,7 @@ void gordejchik::cmdCreate(DeckStore& decks,
     return;
   }
   decks.insert(name, Deck{name, {}});
+  std::cerr << "Колода '" << name << "' создана" << "\n";
 }
 
 void gordejchik::cmdDelete(DeckStore& decks,
@@ -76,6 +78,7 @@ void gordejchik::cmdDelete(DeckStore& decks,
     return;
   }
   decks.erase(name);
+  std::cerr << "Колода '" << name << "' удалена" << "\n";
 }
 
 void gordejchik::cmdHelp(DeckStore&,
@@ -160,6 +163,7 @@ void gordejchik::cmdAdd(DeckStore& decks,
     return;
   }
   deck.cards.insert(cardName, Card{cardName, power, cost, "", ""});
+  std::cerr << "Карта '" << cardName << "' добавлена в '" << deckName << "'" << "\n";
 }
 
 void gordejchik::cmdRemove(DeckStore& decks,
@@ -181,6 +185,7 @@ void gordejchik::cmdRemove(DeckStore& decks,
     return;
   }
   deck.cards.erase(cardName);
+  std::cerr << "Карта '" << cardName << "' удалена из '" << deckName << "'" << "\n";
 }
 
 void gordejchik::cmdShow(DeckStore& decks,
@@ -197,6 +202,7 @@ void gordejchik::cmdShow(DeckStore& decks,
   }
   const Deck& deck = decks.at(name);
   const size_t count = deck.cards.size();
+  std::cerr << "Колода '" << name << "': карт " << count << "\n";
   if (count == 0) {
     return;
   }
@@ -285,6 +291,7 @@ void gordejchik::cmdSetType(DeckStore& decks,
     return;
   }
   deck.cards.at(cardName).type = type;
+  std::cerr << "Тип карты '" << cardName << "' установлен" << "\n";
 }
 
 void gordejchik::cmdSetDesc(DeckStore& decks,
@@ -307,6 +314,7 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
     return;
   }
   deck.cards.at(cardName).description = desc;
+  std::cerr << "Описание карты '" << cardName << "' установлено" << "\n";
 }
 
 void gordejchik::cmdRange(DeckStore& decks,
@@ -378,6 +386,7 @@ void gordejchik::cmdRange(DeckStore& decks,
       out << names[i] << ": POWER " << card.power
           << ", COST " << card.cost << "\n";
     }
+    std::cerr << "Найдено карт: " << found << "\n";
   } catch (...) {
     delete[] names;
     throw;
@@ -461,6 +470,7 @@ void gordejchik::cmdOptimize(DeckStore& decks,
         newDeck.cards.insert(names[i], deck.cards.at(names[i]));
       }
       decks.insert(newDeckName, newDeck);
+      std::cerr << "Создана колода '" << newDeckName << "'" << "\n";
     }
   } catch (...) {
     delete[] names;
@@ -618,6 +628,7 @@ void gordejchik::cmdMerge(DeckStore& decks,
     }
   }
   decks.insert(newName, merged);
+  std::cerr << "Колоды объединены в '" << newName << "'" << "\n";
 }
 
 void gordejchik::cmdSave(DeckStore& decks,
@@ -650,6 +661,7 @@ void gordejchik::cmdSave(DeckStore& decks,
     file << card.type << "\n";
     file << card.description << "\n";
   }
+  std::cerr << "Колода сохранена в '" << filename << "'" << "\n";
 }
 
 void gordejchik::cmdLoad(DeckStore& decks,
@@ -729,6 +741,7 @@ void gordejchik::cmdLoad(DeckStore& decks,
     deck.cards.insert(cardName, Card{cardName, power, cost, type, desc});
   }
   decks.insert(deckName, deck);
+  std::cerr << "Колода загружена из '" << filename << "'" << "\n";
 }
 
 gordejchik::HashTable< std::string, gordejchik::CommandHandler >
