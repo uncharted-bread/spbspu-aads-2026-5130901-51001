@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE F0Tests
 #include <string>
+#include <utility>
 #include <boost/test/included/unit_test.hpp>
 #include "hashtable.hpp"
 
