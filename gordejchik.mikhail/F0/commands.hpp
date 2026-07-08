@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <iosfwd>
 #include <string>
-#include "deck.hpp"
+#include "card.hpp"
 #include "hashtable.hpp"
 
 namespace gordejchik {
@@ -18,6 +18,7 @@ namespace gordejchik {
 
   ParsedCommand parseLine(const std::string& line);
 
+  using Deck = HashTable< std::string, Card >;
   using DeckStore = HashTable< std::string, Deck >;
   using CommandHandler = void(*)(DeckStore&, const ParsedCommand&, std::ostream&);
 
