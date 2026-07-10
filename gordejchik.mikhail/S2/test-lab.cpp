@@ -1,9 +1,62 @@
 #define BOOST_TEST_MODULE S2
 #include <limits>
+#include <string>
+#include <utility>
 #include <boost/test/included/unit_test.hpp>
 #include "calc.hpp"
+#include "list.hpp"
 #include "queue.hpp"
 #include "stack.hpp"
+
+class Tracked
+{
+public:
+  static size_t copyCount;
+  static size_t moveCount;
+
+  Tracked(int first, int second);
+  Tracked(const Tracked& other);
+  Tracked(Tracked&& other) noexcept;
+
+  int sum() const;
+
+private:
+  int first_;
+  int second_;
+};
+
+size_t Tracked::copyCount = 0;
+size_t Tracked::moveCount = 0;
+
+Tracked::Tracked(int first, int second):
+  first_(first),
+  second_(second)
+{}
+
+Tracked::Tracked(const Tracked& other):
+  first_(other.first_),
+  second_(other.second_)
+{
+  ++Tracked::copyCount;
+}
+
+Tracked::Tracked(Tracked&& other) noexcept:
+  first_(other.first_),
+  second_(other.second_)
+{
+  ++Tracked::moveCount;
+}
+
+int Tracked::sum() const
+{
+  return first_ + second_;
+}
+
+static void resetTrackedCounters()
+{
+  Tracked::copyCount = 0;
+  Tracked::moveCount = 0;
+}
 
 BOOST_AUTO_TEST_SUITE(StackTests)
 
@@ -115,6 +168,100 @@ BOOST_AUTO_TEST_CASE(stringValues)
   q.push("beta");
   BOOST_CHECK_EQUAL(q.front(), "alpha");
   BOOST_CHECK_EQUAL(q.back(), "beta");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(ListEmplaceTests)
+
+BOOST_AUTO_TEST_CASE(emplaceBackConstructsInPlace)
+{
+  gordejchik::List< Tracked > list;
+  resetTrackedCounters();
+  list.emplaceBack(40, 2);
+  BOOST_CHECK_EQUAL(list.size(), 1);
+  BOOST_CHECK_EQUAL(list.back().sum(), 42);
+  BOOST_CHECK_EQUAL(Tracked::copyCount, 0);
+  BOOST_CHECK_EQUAL(Tracked::moveCount, 0);
+}
+
+BOOST_AUTO_TEST_CASE(emplaceFrontConstructsInPlace)
+{
+  gordejchik::List< Tracked > list;
+  resetTrackedCounters();
+  list.emplaceFront(1, 2);
+  list.emplaceFront(3, 4);
+  BOOST_CHECK_EQUAL(list.size(), 2);
+  BOOST_CHECK_EQUAL(list.front().sum(), 7);
+  BOOST_CHECK_EQUAL(list.back().sum(), 3);
+  BOOST_CHECK_EQUAL(Tracked::copyCount, 0);
+  BOOST_CHECK_EQUAL(Tracked::moveCount, 0);
+}
+
+BOOST_AUTO_TEST_CASE(emplaceAfterInsertsInMiddle)
+{
+  gordejchik::List< int > list;
+  list.pushBack(1);
+  list.pushBack(3);
+  gordejchik::List< int >::iterator result = list.emplaceAfter(list.begin(), 2);
+  BOOST_CHECK_EQUAL(*result, 2);
+  gordejchik::List< int >::const_iterator it = list.cbegin();
+  BOOST_CHECK_EQUAL(*it, 1);
+  ++it;
+  BOOST_CHECK_EQUAL(*it, 2);
+  ++it;
+  BOOST_CHECK_EQUAL(*it, 3);
+  BOOST_CHECK_EQUAL(list.size(), 3);
+}
+
+BOOST_AUTO_TEST_CASE(emplaceAfterTailAppends)
+{
+  gordejchik::List< int > list;
+  list.pushBack(1);
+  gordejchik::List< int >::iterator result = list.emplaceAfter(list.begin(), 2);
+  BOOST_CHECK_EQUAL(*result, 2);
+  BOOST_CHECK_EQUAL(list.back(), 2);
+  BOOST_CHECK_EQUAL(list.size(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(emplaceAfterConstructsInPlace)
+{
+  gordejchik::List< Tracked > list;
+  list.emplaceBack(1, 1);
+  resetTrackedCounters();
+  list.emplaceAfter(list.cbegin(), 2, 2);
+  BOOST_CHECK_EQUAL(list.back().sum(), 4);
+  BOOST_CHECK_EQUAL(Tracked::copyCount, 0);
+  BOOST_CHECK_EQUAL(Tracked::moveCount, 0);
+}
+
+BOOST_AUTO_TEST_CASE(emplaceMultiArgumentConstructor)
+{
+  gordejchik::List< std::string > list;
+  list.emplaceBack(3, 'a');
+  BOOST_CHECK_EQUAL(list.back(), "aaa");
+}
+
+BOOST_AUTO_TEST_CASE(emplaceForwardsLvalueAsCopy)
+{
+  gordejchik::List< Tracked > list;
+  Tracked original(20, 22);
+  resetTrackedCounters();
+  list.emplaceBack(original);
+  BOOST_CHECK_EQUAL(list.back().sum(), 42);
+  BOOST_CHECK_EQUAL(Tracked::copyCount, 1);
+  BOOST_CHECK_EQUAL(Tracked::moveCount, 0);
+}
+
+BOOST_AUTO_TEST_CASE(emplaceForwardsRvalueAsMove)
+{
+  gordejchik::List< Tracked > list;
+  Tracked original(20, 22);
+  resetTrackedCounters();
+  list.emplaceBack(std::move(original));
+  BOOST_CHECK_EQUAL(list.back().sum(), 42);
+  BOOST_CHECK_EQUAL(Tracked::copyCount, 0);
+  BOOST_CHECK_EQUAL(Tracked::moveCount, 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
