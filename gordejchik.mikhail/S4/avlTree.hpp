@@ -32,9 +32,9 @@ namespace gordejchik {
       bool inserted = false;
       Node* node = this->insertNode(k, Value(), inserted);
       if (inserted) {
-        rebalanceFrom(node->parent_);
+        rebalanceFrom(node->parent);
       }
-      return node->data_.second;
+      return node->data.second;
     }
 
     void push(const Key& k, const Value& v)
@@ -42,9 +42,9 @@ namespace gordejchik {
       bool inserted = false;
       Node* node = this->insertNode(k, v, inserted);
       if (inserted) {
-        rebalanceFrom(node->parent_);
+        rebalanceFrom(node->parent);
       } else {
-        node->data_.second = v;
+        node->data.second = v;
       }
     }
 
@@ -53,7 +53,7 @@ namespace gordejchik {
       bool inserted = false;
       Node* node = this->insertNode(value.first, value.second, inserted);
       if (inserted) {
-        rebalanceFrom(node->parent_);
+        rebalanceFrom(node->parent);
       }
       return std::pair< iterator, bool >(this->makeIterator(node), inserted);
     }
@@ -76,7 +76,7 @@ namespace gordejchik {
       if (!node) {
         throw std::out_of_range("AVLTree: key not found");
       }
-      Value result = node->data_.second;
+      Value result = node->data.second;
       Node* fixup = this->eraseNode(node);
       rebalanceFrom(fixup);
       return result;
@@ -97,28 +97,28 @@ namespace gordejchik {
         this->updateHeight(cur);
         const std::ptrdiff_t balance = balanceOf(cur);
         if (balance > 1) {
-          if (balanceOf(cur->left_) >= 0) {
-            cur = this->rotateRightNode(cur->left_);
+          if (balanceOf(cur->left) >= 0) {
+            cur = this->rotateRightNode(cur->left);
           } else {
-            this->rotateLeftNode(cur->left_->right_);
-            cur = this->rotateRightNode(cur->left_);
+            this->rotateLeftNode(cur->left->right);
+            cur = this->rotateRightNode(cur->left);
           }
         } else if (balance < -1) {
-          if (balanceOf(cur->right_) <= 0) {
-            cur = this->rotateLeftNode(cur->right_);
+          if (balanceOf(cur->right) <= 0) {
+            cur = this->rotateLeftNode(cur->right);
           } else {
-            this->rotateRightNode(cur->right_->left_);
-            cur = this->rotateLeftNode(cur->right_);
+            this->rotateRightNode(cur->right->left);
+            cur = this->rotateLeftNode(cur->right);
           }
         }
-        cur = cur->parent_;
+        cur = cur->parent;
       }
     }
 
     static std::ptrdiff_t balanceOf(const Node* node)
     {
-      const size_t lh = BSTree< Key, Value, Compare >::nodeHeight(node->left_);
-      const size_t rh = BSTree< Key, Value, Compare >::nodeHeight(node->right_);
+      const size_t lh = BSTree< Key, Value, Compare >::nodeHeight(node->left);
+      const size_t rh = BSTree< Key, Value, Compare >::nodeHeight(node->right);
       return static_cast< std::ptrdiff_t >(lh) - static_cast< std::ptrdiff_t >(rh);
     }
   };
