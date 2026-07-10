@@ -77,7 +77,7 @@ static gordejchik::Queue< std::string > tokenize(const std::string& line)
   return tokens;
 }
 
-static gordejchik::Queue< std::string > infixToPostfix(
+static gordejchik::Queue< std::string > convertToPostfix(
     gordejchik::Queue< std::string >& input)
 {
   gordejchik::Queue< std::string > output;
@@ -201,6 +201,6 @@ long long gordejchik::calculateExpression(const std::string& line)
   if (tokens.empty()) {
     throw std::invalid_argument("Пустое выражение");
   }
-  gordejchik::Queue< std::string > postfix = infixToPostfix(tokens);
+  gordejchik::Queue< std::string > postfix = convertToPostfix(tokens);
   return evaluatePostfix(postfix);
 }
