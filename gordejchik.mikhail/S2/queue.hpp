@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <utility>
 #include "list.hpp"
 
 namespace gordejchik {
@@ -10,6 +11,10 @@ namespace gordejchik {
   class Queue {
   public:
     void push(const T& value);
+
+    template< class... Args >
+    void emplace(Args&&... args);
+
     const T& front() const;
     const T& back() const;
     void pop();
@@ -24,6 +29,13 @@ namespace gordejchik {
   void Queue< T >::push(const T& value)
   {
     data_.pushBack(value);
+  }
+
+  template< class T >
+  template< class... Args >
+  void Queue< T >::emplace(Args&&... args)
+  {
+    data_.emplaceBack(std::forward< Args >(args)...);
   }
 
   template< class T >
