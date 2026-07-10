@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
   gordejchik::Stack< long long > results;
   std::string line;
   while (std::getline(input, line)) {
-    if (line.empty()) {
+    if (line.find_first_not_of(' ') == std::string::npos) {
       continue;
     }
     try {
