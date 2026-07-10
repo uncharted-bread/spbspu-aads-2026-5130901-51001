@@ -1,8 +1,9 @@
 #include "calc.hpp"
-#include <string>
+#include <limits>
 #include <stdexcept>
-#include "stack.hpp"
+#include <string>
 #include "queue.hpp"
+#include "stack.hpp"
 
 static bool isBinaryOp(const std::string& token)
 {
@@ -131,29 +132,91 @@ static gordejchik::Queue< std::string > convertToPostfix(
   return output;
 }
 
+static long long addChecked(long long left, long long right)
+{
+  const long long max = std::numeric_limits< long long >::max();
+  const long long min = std::numeric_limits< long long >::min();
+  if ((right > 0) && (left > max - right)) {
+    throw std::overflow_error("Addition overflow");
+  }
+  if ((right < 0) && (left < min - right)) {
+    throw std::overflow_error("Addition overflow");
+  }
+  return left + right;
+}
+
+static long long subtractChecked(long long left, long long right)
+{
+  const long long max = std::numeric_limits< long long >::max();
+  const long long min = std::numeric_limits< long long >::min();
+  if ((right > 0) && (left < min + right)) {
+    throw std::overflow_error("Subtraction overflow");
+  }
+  if ((right < 0) && (left > max + right)) {
+    throw std::overflow_error("Subtraction overflow");
+  }
+  return left - right;
+}
+
+static long long multiplyChecked(long long left, long long right)
+{
+  const long long max = std::numeric_limits< long long >::max();
+  const long long min = std::numeric_limits< long long >::min();
+  if ((left > 0) && (right > 0) && (left > max / right)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  if ((left > 0) && (right < 0) && (right < min / left)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  if ((left < 0) && (right > 0) && (left < min / right)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  if ((left < 0) && (right < 0) && (left < max / right)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  return left * right;
+}
+
+static long long divideChecked(long long left, long long right)
+{
+  const long long min = std::numeric_limits< long long >::min();
+  if (right == 0) {
+    throw std::invalid_argument("Division by zero");
+  }
+  if ((left == min) && (right == -1)) {
+    throw std::overflow_error("Division overflow");
+  }
+  return left / right;
+}
+
+static long long moduloChecked(long long left, long long right)
+{
+  if (right == 0) {
+    throw std::invalid_argument("Modulo by zero");
+  }
+  if (right == -1) {
+    return 0;
+  }
+  return left % right;
+}
+
 static long long applyBinary(long long left, long long right,
     const std::string& op)
 {
   if (op == "+") {
-    return left + right;
+    return addChecked(left, right);
   }
   if (op == "-") {
-    return left - right;
+    return subtractChecked(left, right);
   }
   if (op == "*") {
-    return left * right;
+    return multiplyChecked(left, right);
   }
   if (op == "/") {
-    if (right == 0) {
-      throw std::invalid_argument("Division by zero");
-    }
-    return left / right;
+    return divideChecked(left, right);
   }
   if (op == "%") {
-    if (right == 0) {
-      throw std::invalid_argument("Modulo by zero");
-    }
-    return left % right;
+    return moduloChecked(left, right);
   }
   throw std::invalid_argument("Unknown operator " + op);
 }
