@@ -1,4 +1,5 @@
 #define BOOST_TEST_MODULE S2
+#include <limits>
 #include <boost/test/included/unit_test.hpp>
 #include "calc.hpp"
 #include "queue.hpp"
@@ -243,6 +244,58 @@ BOOST_AUTO_TEST_CASE(complexMixed)
 {
   BOOST_CHECK_EQUAL(
       gordejchik::calculateExpression("2 * 3 + 4 * 5"), 26);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(CalcOverflowTests)
+
+BOOST_AUTO_TEST_CASE(additionOverflow)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("9223372036854775807 + 1"),
+      std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(additionAtBoundary)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("9223372036854775806 + 1"),
+      std::numeric_limits< long long >::max());
+}
+
+BOOST_AUTO_TEST_CASE(subtractionOverflow)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("! 9223372036854775807 - 1"),
+      std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(multiplicationOverflow)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("4611686018427387904 * 2"),
+      std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(negativeMultiplicationOverflow)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("! 4611686018427387904 * 2"),
+      std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(divisionOverflow)
+{
+  BOOST_CHECK_THROW(
+      gordejchik::calculateExpression("! 9223372036854775807 / ! 0"),
+      std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(moduloByMinusOne)
+{
+  BOOST_CHECK_EQUAL(
+      gordejchik::calculateExpression("! 9223372036854775807 % ! 0"), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
