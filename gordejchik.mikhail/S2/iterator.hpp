@@ -1,6 +1,7 @@
 #ifndef GORDEJCHIK_ITERATOR_HPP
 #define GORDEJCHIK_ITERATOR_HPP
 
+#include <memory>
 #include "node.hpp"
 
 namespace gordejchik {
@@ -20,15 +21,12 @@ namespace gordejchik {
     T* operator->() const;
     LIter& operator++();
     LIter operator++(int);
-    LIter& operator--();
-    LIter operator--(int);
     bool operator==(const LIter& rhs) const;
     bool operator!=(const LIter& rhs) const;
   private:
-    using BaseNode = detail::BaseNode;
-    using Node = detail::Node< T >;
-    explicit LIter(BaseNode* node);
-    BaseNode* node_;
+    using Node = detail::node_t< T >;
+    explicit LIter(Node* node);
+    Node* node_;
   };
 
   template< class T >
@@ -41,15 +39,12 @@ namespace gordejchik {
     const T* operator->() const;
     LCIter& operator++();
     LCIter operator++(int);
-    LCIter& operator--();
-    LCIter operator--(int);
     bool operator==(const LCIter& rhs) const;
     bool operator!=(const LCIter& rhs) const;
   private:
-    using BaseNode = detail::BaseNode;
-    using Node = detail::Node< T >;
-    explicit LCIter(const BaseNode* node);
-    const BaseNode* node_;
+    using Node = detail::node_t< T >;
+    explicit LCIter(const Node* node);
+    const Node* node_;
   };
 
   template< class T >
@@ -58,26 +53,26 @@ namespace gordejchik {
   {}
 
   template< class T >
-  LIter< T >::LIter(BaseNode* node):
+  LIter< T >::LIter(Node* node):
     node_(node)
   {}
 
   template< class T >
   T& LIter< T >::operator*() const
   {
-    return static_cast< Node* >(node_)->value_;
+    return node_->data;
   }
 
   template< class T >
   T* LIter< T >::operator->() const
   {
-    return &(static_cast< Node* >(node_)->value_);
+    return std::addressof(node_->data);
   }
 
   template< class T >
   LIter< T >& LIter< T >::operator++()
   {
-    node_ = node_->next_;
+    node_ = node_->next;
     return *this;
   }
 
@@ -85,22 +80,7 @@ namespace gordejchik {
   LIter< T > LIter< T >::operator++(int)
   {
     LIter tmp(*this);
-    node_ = node_->next_;
-    return tmp;
-  }
-
-  template< class T >
-  LIter< T >& LIter< T >::operator--()
-  {
-    node_ = node_->prev_;
-    return *this;
-  }
-
-  template< class T >
-  LIter< T > LIter< T >::operator--(int)
-  {
-    LIter tmp(*this);
-    node_ = node_->prev_;
+    node_ = node_->next;
     return tmp;
   }
 
@@ -127,26 +107,26 @@ namespace gordejchik {
   {}
 
   template< class T >
-  LCIter< T >::LCIter(const BaseNode* node):
+  LCIter< T >::LCIter(const Node* node):
     node_(node)
   {}
 
   template< class T >
   const T& LCIter< T >::operator*() const
   {
-    return static_cast< const Node* >(node_)->value_;
+    return node_->data;
   }
 
   template< class T >
   const T* LCIter< T >::operator->() const
   {
-    return &(static_cast< const Node* >(node_)->value_);
+    return std::addressof(node_->data);
   }
 
   template< class T >
   LCIter< T >& LCIter< T >::operator++()
   {
-    node_ = node_->next_;
+    node_ = node_->next;
     return *this;
   }
 
@@ -154,22 +134,7 @@ namespace gordejchik {
   LCIter< T > LCIter< T >::operator++(int)
   {
     LCIter tmp(*this);
-    node_ = node_->next_;
-    return tmp;
-  }
-
-  template< class T >
-  LCIter< T >& LCIter< T >::operator--()
-  {
-    node_ = node_->prev_;
-    return *this;
-  }
-
-  template< class T >
-  LCIter< T > LCIter< T >::operator--(int)
-  {
-    LCIter tmp(*this);
-    node_ = node_->prev_;
+    node_ = node_->next;
     return tmp;
   }
 
