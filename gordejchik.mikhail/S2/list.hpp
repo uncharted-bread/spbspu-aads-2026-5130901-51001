@@ -42,6 +42,15 @@ namespace gordejchik {
     void popFront();
     void popBack();
 
+    template< class... Args >
+    iterator emplaceAfter(const_iterator pos, Args&&... args);
+
+    template< class... Args >
+    void emplaceFront(Args&&... args);
+
+    template< class... Args >
+    void emplaceBack(Args&&... args);
+
     iterator insert(const_iterator pos, const T& value);
     iterator erase(iterator pos);
 
@@ -259,6 +268,30 @@ namespace gordejchik {
   void List< T >::popBack()
   {
     erase(iterator(tail_));
+  }
+
+  template< class T >
+  template< class... Args >
+  typename List< T >::iterator List< T >::emplaceAfter(const_iterator pos, Args&&... args)
+  {
+    Node* node = detail::createNode< T >(std::forward< Args >(args)...);
+    Node* posNode = const_cast< Node* >(pos.node_);
+    linkBefore(posNode->next, node);
+    return iterator(node);
+  }
+
+  template< class T >
+  template< class... Args >
+  void List< T >::emplaceFront(Args&&... args)
+  {
+    linkBefore(head_, detail::createNode< T >(std::forward< Args >(args)...));
+  }
+
+  template< class T >
+  template< class... Args >
+  void List< T >::emplaceBack(Args&&... args)
+  {
+    linkBefore(nullptr, detail::createNode< T >(std::forward< Args >(args)...));
   }
 
   template< class T >
