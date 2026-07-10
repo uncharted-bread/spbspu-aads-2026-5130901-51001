@@ -112,17 +112,17 @@ static gordejchik::Queue< std::string > convertToPostfix(
         ops.pop();
       }
       if (ops.empty()) {
-        throw std::invalid_argument("Несовпадающие скобки");
+        throw std::invalid_argument("Mismatched parentheses");
       }
       ops.pop();
     } else {
-      throw std::invalid_argument("Неизвестный токен: " + token);
+      throw std::invalid_argument("Unknown token: " + token);
     }
   }
 
   while (!ops.empty()) {
     if (ops.top() == "(") {
-      throw std::invalid_argument("Несовпадающие скобки");
+      throw std::invalid_argument("Mismatched parentheses");
     }
     output.push(ops.top());
     ops.pop();
@@ -145,17 +145,17 @@ static long long applyBinary(long long left, long long right,
   }
   if (op == "/") {
     if (right == 0) {
-      throw std::invalid_argument("Деление на 0");
+      throw std::invalid_argument("Division by zero");
     }
     return left / right;
   }
   if (op == "%") {
     if (right == 0) {
-      throw std::invalid_argument("Взятие остатка от деления на 0");
+      throw std::invalid_argument("Modulo by zero");
     }
     return left % right;
   }
-  throw std::invalid_argument("Неизвестный оператор " + op);
+  throw std::invalid_argument("Unknown operator " + op);
 }
 
 static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
@@ -170,14 +170,14 @@ static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
       operands.push(std::stoll(token));
     } else if (isUnaryOp(token)) {
       if (operands.empty()) {
-        throw std::invalid_argument("Недостаточно опрерандов for !");
+        throw std::invalid_argument("Not enough operands for !");
       }
       const long long val = operands.top();
       operands.pop();
       operands.push(~val);
     } else if (isBinaryOp(token)) {
       if (operands.size() < 2) {
-        throw std::invalid_argument("Недостаточно опрерандов");
+        throw std::invalid_argument("Not enough operands");
       }
       const long long right = operands.top();
       operands.pop();
@@ -185,12 +185,12 @@ static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
       operands.pop();
       operands.push(applyBinary(left, right, token));
     } else {
-      throw std::invalid_argument("Неверный токен постфикса: " + token);
+      throw std::invalid_argument("Invalid postfix token: " + token);
     }
   }
 
   if (operands.size() != 1) {
-    throw std::invalid_argument("Неверное выражение");
+    throw std::invalid_argument("Invalid expression");
   }
   return operands.top();
 }
@@ -199,7 +199,7 @@ long long gordejchik::calculateExpression(const std::string& line)
 {
   gordejchik::Queue< std::string > tokens = tokenize(line);
   if (tokens.empty()) {
-    throw std::invalid_argument("Пустое выражение");
+    throw std::invalid_argument("Empty expression");
   }
   gordejchik::Queue< std::string > postfix = convertToPostfix(tokens);
   return evaluatePostfix(postfix);
