@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
       continue;
     }
     try {
-      long long result = gordejchik::calculateExpression(line);
+      const long long result = gordejchik::calculateExpression(line);
       results.push(result);
     } catch (const std::exception& e) {
       std::cerr << e.what() << "\n";

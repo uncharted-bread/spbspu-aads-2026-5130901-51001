@@ -68,7 +68,7 @@ static gordejchik::Queue< std::string > tokenize(const std::string& line)
     if (i >= line.size()) {
       break;
     }
-    size_t start = i;
+    const size_t start = i;
     while ((i < line.size()) && (line[i] != ' ')) {
       ++i;
     }
@@ -172,16 +172,16 @@ static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
       if (operands.empty()) {
         throw std::invalid_argument("Недостаточно опрерандов for !");
       }
-      long long val = operands.top();
+      const long long val = operands.top();
       operands.pop();
       operands.push(~val);
     } else if (isBinaryOp(token)) {
       if (operands.size() < 2) {
         throw std::invalid_argument("Недостаточно опрерандов");
       }
-      long long right = operands.top();
+      const long long right = operands.top();
       operands.pop();
-      long long left = operands.top();
+      const long long left = operands.top();
       operands.pop();
       operands.push(applyBinary(left, right, token));
     } else {
