@@ -15,12 +15,14 @@ namespace gordejchik {
       BSTNode* left_;
       BSTNode* right_;
       BSTNode* parent_;
+      size_t height_;
 
       BSTNode(const Key& k, const Value& v, BSTNode* parent):
         data_(k, v),
         left_(nullptr),
         right_(nullptr),
-        parent_(parent)
+        parent_(parent),
+        height_(1)
       {}
     };
 
@@ -291,6 +293,7 @@ namespace gordejchik {
           } else {
             cur->left_ = new Node_(k, v, cur);
             ++size_;
+            updateHeightsUp(cur);
             return;
           }
         } else if (cmp_(cur->data_.first, k)) {
@@ -299,6 +302,7 @@ namespace gordejchik {
           } else {
             cur->right_ = new Node_(k, v, cur);
             ++size_;
+            updateHeightsUp(cur);
             return;
           }
         } else {
@@ -433,6 +437,9 @@ namespace gordejchik {
       } else {
         grandparent->right_ = node;
       }
+      updateHeight(parent);
+      updateHeight(node);
+      updateHeightsUp(grandparent);
       Node_** addr = const_cast< Node_** >(&root_);
       return const_iterator(node, addr);
     }
@@ -462,6 +469,9 @@ namespace gordejchik {
       } else {
         grandparent->right_ = node;
       }
+      updateHeight(parent);
+      updateHeight(node);
+      updateHeightsUp(grandparent);
       Node_** addr = const_cast< Node_** >(&root_);
       return const_iterator(node, addr);
     }
@@ -490,12 +500,12 @@ namespace gordejchik {
 
     size_t height(const_iterator pos) const
     {
-      return subtreeHeight(pos.node_);
+      return nodeHeight(pos.node_);
     }
 
     size_t height() const
     {
-      return subtreeHeight(root_);
+      return nodeHeight(root_);
     }
 
     BSTree(const BSTree& other):
@@ -560,14 +570,47 @@ namespace gordejchik {
     size_t size_;
     Compare cmp_;
 
-    static void freeSubtree(Node_* node)
+    static size_t nodeHeight(const Node_* node)
     {
-      if (!node) {
-        return;
+      return node ? node->height_ : 0;
+    }
+
+    static void updateHeight(Node_* node)
+    {
+      const size_t lh = nodeHeight(node->left_);
+      const size_t rh = nodeHeight(node->right_);
+      node->height_ = 1 + (lh > rh ? lh : rh);
+    }
+
+    static void updateHeightsUp(Node_* node)
+    {
+      while (node) {
+        updateHeight(node);
+        node = node->parent_;
       }
-      freeSubtree(node->left_);
-      freeSubtree(node->right_);
-      delete node;
+    }
+
+    static void freeSubtree(Node_* root)
+    {
+      Node_* cur = root;
+      while (cur) {
+        if (cur->left_) {
+          cur = cur->left_;
+        } else if (cur->right_) {
+          cur = cur->right_;
+        } else {
+          Node_* parent = (cur == root) ? nullptr : cur->parent_;
+          if (parent) {
+            if (parent->left_ == cur) {
+              parent->left_ = nullptr;
+            } else {
+              parent->right_ = nullptr;
+            }
+          }
+          delete cur;
+          cur = parent;
+        }
+      }
     }
 
     Node_* findNode(const Key& k) const
@@ -601,13 +644,16 @@ namespace gordejchik {
 
     void eraseNode(Node_* node)
     {
+      Node_* fixup = node->parent_;
       if (!node->left_) {
         transplant(node, node->right_);
       } else if (!node->right_) {
         transplant(node, node->left_);
       } else {
         Node_* successor = detail::leftmost< Key, Value >(node->right_);
+        fixup = successor;
         if (successor->parent_ != node) {
+          fixup = successor->parent_;
           transplant(successor, successor->right_);
           successor->right_ = node->right_;
           successor->right_->parent_ = successor;
@@ -617,16 +663,7 @@ namespace gordejchik {
         successor->left_->parent_ = successor;
       }
       delete node;
-    }
-
-    static size_t subtreeHeight(const Node_* node)
-    {
-      if (!node) {
-        return 0;
-      }
-      const size_t lh = subtreeHeight(node->left_);
-      const size_t rh = subtreeHeight(node->right_);
-      return 1 + (lh > rh ? lh : rh);
+      updateHeightsUp(fixup);
     }
 
     static Node_* cloneSubtree(const Node_* src, Node_* parent)
@@ -634,15 +671,35 @@ namespace gordejchik {
       if (!src) {
         return nullptr;
       }
-      Node_* copy = new Node_(src->data_.first, src->data_.second, parent);
+      Node_* root = nullptr;
       try {
-        copy->left_ = cloneSubtree(src->left_, copy);
-        copy->right_ = cloneSubtree(src->right_, copy);
+        root = new Node_(src->data_.first, src->data_.second, parent);
+        root->height_ = src->height_;
+        const Node_* from = src;
+        Node_* to = root;
+        while (true) {
+          if (from->left_ && !to->left_) {
+            from = from->left_;
+            to->left_ = new Node_(from->data_.first, from->data_.second, to);
+            to->left_->height_ = from->height_;
+            to = to->left_;
+          } else if (from->right_ && !to->right_) {
+            from = from->right_;
+            to->right_ = new Node_(from->data_.first, from->data_.second, to);
+            to->right_->height_ = from->height_;
+            to = to->right_;
+          } else if (from == src) {
+            break;
+          } else {
+            from = from->parent_;
+            to = to->parent_;
+          }
+        }
       } catch (...) {
-        freeSubtree(copy);
+        freeSubtree(root);
         throw;
       }
-      return copy;
+      return root;
     }
 
     template< class K, class V >
