@@ -1,7 +1,7 @@
-#include "calc.hpp"
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
+#include "calc.hpp"
 #include "stack.hpp"
 
 int main(int argc, char* argv[])

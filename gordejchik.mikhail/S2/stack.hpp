@@ -1,8 +1,9 @@
 #ifndef GORDEJCHIK_STACK_HPP
 #define GORDEJCHIK_STACK_HPP
 
-#include "list.hpp"
+#include <cstddef>
 #include <stdexcept>
+#include "list.hpp"
 
 namespace gordejchik {
   template< class T >
