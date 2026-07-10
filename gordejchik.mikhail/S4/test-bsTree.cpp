@@ -1,7 +1,8 @@
 #define BOOST_TEST_MODULE BSTreeTests
-#include "bsTree.hpp"
-#include <boost/test/included/unit_test.hpp>
 #include <string>
+#include <utility>
+#include <boost/test/included/unit_test.hpp>
+#include "bsTree.hpp"
 
 using gordejchik::BSTree;
 
@@ -276,7 +277,7 @@ BOOST_AUTO_TEST_CASE(move_constructor)
   src.push(1, "a");
   src.push(2, "b");
 
-  BSTree< int, std::string > moved(static_cast< BSTree< int, std::string >&& >(src));
+  BSTree< int, std::string > moved(std::move(src));
   BOOST_TEST(moved.size() == 2);
   BOOST_TEST(moved.get(1) == "a");
   BOOST_TEST(src.empty());
@@ -303,7 +304,7 @@ BOOST_AUTO_TEST_CASE(move_assignment)
 
   BSTree< int, std::string > dst;
   dst.push(99, "z");
-  dst = static_cast< BSTree< int, std::string >&& >(src);
+  dst = std::move(src);
   BOOST_TEST(dst.size() == 1);
   BOOST_TEST(dst.get(1) == "a");
   BOOST_TEST(src.empty());
