@@ -1,5 +1,5 @@
-#ifndef QUEUE_HPP
-#define QUEUE_HPP
+#ifndef GORDEJCHIK_QUEUE_HPP
+#define GORDEJCHIK_QUEUE_HPP
 
 #include "list.hpp"
 #include <stdexcept>

@@ -1,5 +1,5 @@
-#ifndef STACK_HPP
-#define STACK_HPP
+#ifndef GORDEJCHIK_STACK_HPP
+#define GORDEJCHIK_STACK_HPP
 
 #include "list.hpp"
 #include <stdexcept>
