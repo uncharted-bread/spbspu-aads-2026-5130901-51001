@@ -1,3 +1,4 @@
+#define BOOST_TEST_MODULE BSTreeTests
 #include "bsTree.hpp"
 #include <boost/test/included/unit_test.hpp>
 #include <string>
