@@ -1,7 +1,8 @@
-#include "stack.hpp"
-#include "queue.hpp"
-#include "calc.hpp"
+#define BOOST_TEST_MODULE S2
 #include <boost/test/included/unit_test.hpp>
+#include "calc.hpp"
+#include "queue.hpp"
+#include "stack.hpp"
 
 BOOST_AUTO_TEST_SUITE(StackTests)
 
