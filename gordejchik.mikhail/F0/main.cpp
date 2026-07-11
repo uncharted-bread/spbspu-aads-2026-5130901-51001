@@ -5,8 +5,8 @@
 
 int main()
 {
-  std::cerr << "CustStone - карточная игра. "
-      << "Введите 'help' для списка команд." << "\n";
+  std::cerr << "CustStone - a card game. "
+      << "Type 'help' for the list of commands." << "\n";
   gordejchik::DeckStore decks;
   using CommandTable = gordejchik::HashTable< std::string, gordejchik::CommandHandler >;
   const CommandTable commands = gordejchik::makeCommandTable();

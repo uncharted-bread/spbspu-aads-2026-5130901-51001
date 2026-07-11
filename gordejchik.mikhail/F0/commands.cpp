@@ -62,7 +62,7 @@ void gordejchik::cmdCreate(DeckStore& decks,
     return;
   }
   decks.insert(name, Deck());
-  std::cerr << "Колода '" << name << "' создана" << "\n";
+  std::cerr << "Deck '" << name << "' created" << "\n";
 }
 
 void gordejchik::cmdDelete(DeckStore& decks,
@@ -78,7 +78,7 @@ void gordejchik::cmdDelete(DeckStore& decks,
     return;
   }
   decks.erase(name);
-  std::cerr << "Колода '" << name << "' удалена" << "\n";
+  std::cerr << "Deck '" << name << "' deleted" << "\n";
 }
 
 void gordejchik::cmdHelp(DeckStore&,
@@ -89,35 +89,35 @@ void gordejchik::cmdHelp(DeckStore&,
     return;
   }
   out << "create <deck>                        "
-      << "- создать пустую колоду" << "\n";
+      << "- create an empty deck" << "\n";
   out << "delete <deck>                        "
-      << "- удалить колоду" << "\n";
+      << "- delete a deck" << "\n";
   out << "add <deck> <card> <power> <cost>     "
-      << "- добавить карту" << "\n";
+      << "- add a card" << "\n";
   out << "remove <deck> <card>                 "
-      << "- удалить карту" << "\n";
+      << "- remove a card" << "\n";
   out << "set-type <deck> <card> <type>        "
-      << "- задать тип карты" << "\n";
+      << "- set card type" << "\n";
   out << "set-desc <deck> <card> <text>        "
-      << "- задать описание карты" << "\n";
+      << "- set card description" << "\n";
   out << "show <deck>                          "
-      << "- показать все карты" << "\n";
+      << "- show all cards" << "\n";
   out << "info <deck> <card>                   "
-      << "- полная информация о карте" << "\n";
+      << "- full card info" << "\n";
   out << "range <deck> <stat> <min> <max>      "
-      << "- фильтр по диапазону" << "\n";
+      << "- filter by stat range" << "\n";
   out << "merge <new-deck> <deck-1> <deck-2>   "
-      << "- объединить две колоды" << "\n";
+      << "- merge two decks" << "\n";
   out << "optimize <deck> <budget> [<new-deck>]"
-      << " - подбор карт (рюкзак)" << "\n";
+      << " - pick cards (knapsack)" << "\n";
   out << "battle <deck-1> <deck-2> <budget>    "
-      << "- сравнить две колоды" << "\n";
+      << "- compare two decks" << "\n";
   out << "save <deck> <filename>               "
-      << "- сохранить в файл" << "\n";
+      << "- save deck to file" << "\n";
   out << "load <deck> <filename>               "
-      << "- загрузить из файла" << "\n";
+      << "- load deck from file" << "\n";
   out << "help                                 "
-      << "- список команд" << "\n";
+      << "- list commands" << "\n";
 }
 
 void gordejchik::cmdAdd(DeckStore& decks,
@@ -163,7 +163,7 @@ void gordejchik::cmdAdd(DeckStore& decks,
     return;
   }
   deck.insert(cardName, Card{cardName, power, cost, "", ""});
-  std::cerr << "Карта '" << cardName << "' добавлена в '" << deckName << "'" << "\n";
+  std::cerr << "Card '" << cardName << "' added to '" << deckName << "'" << "\n";
 }
 
 void gordejchik::cmdRemove(DeckStore& decks,
@@ -185,7 +185,7 @@ void gordejchik::cmdRemove(DeckStore& decks,
     return;
   }
   deck.erase(cardName);
-  std::cerr << "Карта '" << cardName << "' удалена из '" << deckName << "'" << "\n";
+  std::cerr << "Card '" << cardName << "' removed from '" << deckName << "'" << "\n";
 }
 
 void gordejchik::cmdShow(DeckStore& decks,
@@ -202,7 +202,7 @@ void gordejchik::cmdShow(DeckStore& decks,
   }
   const Deck& deck = decks.at(name);
   const size_t count = deck.size();
-  std::cerr << "Колода '" << name << "': карт " << count << "\n";
+  std::cerr << "Deck '" << name << "': " << count << " cards" << "\n";
   if (count == 0) {
     return;
   }
@@ -290,7 +290,7 @@ void gordejchik::cmdSetType(DeckStore& decks,
     return;
   }
   deck.at(cardName).type = type;
-  std::cerr << "Тип карты '" << cardName << "' установлен" << "\n";
+  std::cerr << "Type of card '" << cardName << "' set" << "\n";
 }
 
 void gordejchik::cmdSetDesc(DeckStore& decks,
@@ -313,7 +313,7 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
     return;
   }
   deck.at(cardName).description = desc;
-  std::cerr << "Описание карты '" << cardName << "' установлено" << "\n";
+  std::cerr << "Description of card '" << cardName << "' set" << "\n";
 }
 
 void gordejchik::cmdRange(DeckStore& decks,
@@ -384,7 +384,7 @@ void gordejchik::cmdRange(DeckStore& decks,
       out << names[i] << ": POWER " << card.power
           << ", COST " << card.cost << "\n";
     }
-    std::cerr << "Найдено карт: " << found << "\n";
+    std::cerr << "Cards found: " << found << "\n";
   } catch (...) {
     delete[] names;
     throw;
@@ -467,7 +467,7 @@ void gordejchik::cmdOptimize(DeckStore& decks,
         newDeck.insert(names[i], deck.at(names[i]));
       }
       decks.insert(newDeckName, newDeck);
-      std::cerr << "Создана колода '" << newDeckName << "'" << "\n";
+      std::cerr << "Created deck '" << newDeckName << "'" << "\n";
     }
   } catch (...) {
     delete[] names;
@@ -623,7 +623,7 @@ void gordejchik::cmdMerge(DeckStore& decks,
     }
   }
   decks.insert(newName, merged);
-  std::cerr << "Колоды объединены в '" << newName << "'" << "\n";
+  std::cerr << "Decks merged into '" << newName << "'" << "\n";
 }
 
 void gordejchik::cmdSave(DeckStore& decks,
@@ -655,7 +655,7 @@ void gordejchik::cmdSave(DeckStore& decks,
     file << card.type << "\n";
     file << card.description << "\n";
   }
-  std::cerr << "Колода сохранена в '" << filename << "'" << "\n";
+  std::cerr << "Deck saved to '" << filename << "'" << "\n";
 }
 
 void gordejchik::cmdLoad(DeckStore& decks,
@@ -735,7 +735,7 @@ void gordejchik::cmdLoad(DeckStore& decks,
     deck.insert(cardName, Card{cardName, power, cost, type, desc});
   }
   decks.insert(deckName, deck);
-  std::cerr << "Колода загружена из '" << filename << "'" << "\n";
+  std::cerr << "Deck loaded from '" << filename << "'" << "\n";
 }
 
 gordejchik::HashTable< std::string, gordejchik::CommandHandler >
