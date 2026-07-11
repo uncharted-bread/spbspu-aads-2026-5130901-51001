@@ -87,21 +87,21 @@ namespace gordejchik {
   }
 
   static void printSums(const List< size_t >& sums)
-    {
-      if (sums.empty()) {
-        std::cout << 0 << '\n';
-        return;
-      }
-      bool first = true;
-      for (auto it = sums.cbegin(); it != sums.cend(); ++it) {
-        if (!first) {
-          std::cout << ' ';
-        }
-        std::cout << *it;
-        first = false;
-      }
-      std::cout << '\n';
+  {
+    if (sums.empty()) {
+      std::cout << 0 << '\n';
+      return;
     }
+    bool first = true;
+    for (auto it = sums.cbegin(); it != sums.cend(); ++it) {
+      if (!first) {
+        std::cout << ' ';
+      }
+      std::cout << *it;
+      first = false;
+    }
+    std::cout << '\n';
+  }
 }
 
 int main()
