@@ -1,4 +1,5 @@
 #define BOOST_TEST_MODULE ListTest
+#include <functional>
 #include <string>
 #include <utility>
 #include <boost/test/included/unit_test.hpp>
@@ -464,6 +465,138 @@ BOOST_AUTO_TEST_CASE(spliceRangeInsideSameList)
 
   BOOST_TEST(toStr(a) == "1 2 3 4");
   BOOST_TEST(a.size() == 4u);
+}
+
+BOOST_AUTO_TEST_CASE(mergeSortedLists)
+{
+  List< int > a;
+  a.pushBack(1);
+  a.pushBack(3);
+  a.pushBack(5);
+  List< int > b;
+  b.pushBack(2);
+  b.pushBack(4);
+  b.pushBack(6);
+
+  a.merge(b);
+
+  BOOST_TEST(toStr(a) == "1 2 3 4 5 6");
+  BOOST_TEST(a.size() == 6u);
+  BOOST_TEST(b.empty());
+}
+
+BOOST_AUTO_TEST_CASE(mergeWithEmpty)
+{
+  List< int > a;
+  a.pushBack(1);
+  List< int > b;
+
+  a.merge(b);
+  BOOST_TEST(toStr(a) == "1");
+
+  b.merge(a);
+  BOOST_TEST(toStr(b) == "1");
+  BOOST_TEST(a.empty());
+}
+
+BOOST_AUTO_TEST_CASE(mergeWithSelf)
+{
+  List< int > a;
+  a.pushBack(1);
+  a.pushBack(2);
+
+  a.merge(a);
+
+  BOOST_TEST(toStr(a) == "1 2");
+  BOOST_TEST(a.size() == 2u);
+}
+
+BOOST_AUTO_TEST_CASE(mergeWithComparator)
+{
+  List< int > a;
+  a.pushBack(5);
+  a.pushBack(3);
+  a.pushBack(1);
+  List< int > b;
+  b.pushBack(6);
+  b.pushBack(4);
+  b.pushBack(2);
+
+  a.merge(b, std::greater< int >());
+
+  BOOST_TEST(toStr(a) == "6 5 4 3 2 1");
+  BOOST_TEST(b.empty());
+}
+
+BOOST_AUTO_TEST_CASE(sortUnsorted)
+{
+  List< int > lst;
+  lst.pushBack(3);
+  lst.pushBack(1);
+  lst.pushBack(4);
+  lst.pushBack(1);
+  lst.pushBack(5);
+  lst.pushBack(9);
+  lst.pushBack(2);
+  lst.pushBack(6);
+
+  lst.sort();
+
+  BOOST_TEST(toStr(lst) == "1 1 2 3 4 5 6 9");
+  BOOST_TEST(lst.size() == 8u);
+}
+
+BOOST_AUTO_TEST_CASE(sortReversed)
+{
+  List< int > lst;
+  for (int i = 5; i > 0; --i) {
+    lst.pushBack(i);
+  }
+
+  lst.sort();
+
+  BOOST_TEST(toStr(lst) == "1 2 3 4 5");
+}
+
+BOOST_AUTO_TEST_CASE(sortSmallLists)
+{
+  List< int > lst;
+  lst.sort();
+  BOOST_TEST(lst.empty());
+
+  lst.pushBack(7);
+  lst.sort();
+  BOOST_TEST(toStr(lst) == "7");
+
+  lst.pushBack(6);
+  lst.sort();
+  BOOST_TEST(toStr(lst) == "6 7");
+}
+
+BOOST_AUTO_TEST_CASE(sortWithComparator)
+{
+  List< int > lst;
+  lst.pushBack(2);
+  lst.pushBack(5);
+  lst.pushBack(1);
+
+  lst.sort(std::greater< int >());
+
+  BOOST_TEST(toStr(lst) == "5 2 1");
+}
+
+BOOST_AUTO_TEST_CASE(sortStrings)
+{
+  List< std::string > lst;
+  lst.pushBack("pear");
+  lst.pushBack("apple");
+  lst.pushBack("orange");
+
+  lst.sort();
+
+  BOOST_TEST(lst.front() == "apple");
+  BOOST_TEST(lst.back() == "pear");
+  BOOST_TEST(lst.size() == 3u);
 }
 
 BOOST_AUTO_TEST_CASE(stringList)
