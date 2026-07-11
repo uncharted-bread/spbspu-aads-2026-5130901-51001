@@ -1,4 +1,5 @@
 #include "commands.hpp"
+#include "safe-insert.hpp"
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -18,21 +19,6 @@ static std::string extractWord(const std::string& line, size_t& pos)
 static void printInvalid(std::ostream& out)
 {
   out << "<INVALID COMMAND>\n";
-}
-
-template< class K, class V, class H, class E >
-static void safeInsert(gordejchik::HashTable< K, V, H, E >& table,
-    const K& key, const V& val)
-{
-  for (size_t attempt = 0; attempt < 5; ++attempt) {
-    try {
-      table.insert(key, val);
-      return;
-    } catch (const std::overflow_error&) {
-      table.rehash(table.bucketCount() * 2);
-    }
-  }
-  table.insert(key, val);
 }
 
 struct NeighborInfo {
@@ -292,7 +278,7 @@ void gordejchik::cmdCreate(const std::string& args,
       g.addVertex(v);
     }
   }
-  safeInsert(graphs, name, g);
+  detail::safeInsert(graphs, name, g);
 }
 
 void gordejchik::cmdMerge(const std::string& args,
@@ -342,7 +328,7 @@ void gordejchik::cmdMerge(const std::string& args,
       ng.addEdge(it->first.first, it->first.second, *wit);
     }
   }
-  safeInsert(graphs, newName, ng);
+  detail::safeInsert(graphs, newName, ng);
 }
 
 void gordejchik::cmdExtract(const std::string& args,
@@ -397,5 +383,5 @@ void gordejchik::cmdExtract(const std::string& args,
       }
     }
   }
-  safeInsert(graphs, newName, ng);
+  detail::safeInsert(graphs, newName, ng);
 }

@@ -1,21 +1,7 @@
 #include "graph.hpp"
 #include <fstream>
 #include <stdexcept>
-
-template< class K, class V, class H, class E >
-static void safeInsert(gordejchik::HashTable< K, V, H, E >& table,
-    const K& key, const V& val)
-{
-  for (size_t attempt = 0; attempt < 5; ++attempt) {
-    try {
-      table.insert(key, val);
-      return;
-    } catch (const std::overflow_error&) {
-      table.rehash(table.bucketCount() * 2);
-    }
-  }
-  table.insert(key, val);
-}
+#include "safe-insert.hpp"
 
 gordejchik::Graph::Graph():
   vertices_(8, 4),
@@ -27,7 +13,7 @@ void gordejchik::Graph::addVertex(const std::string& name)
   if (vertices_.contains(name)) {
     return;
   }
-  safeInsert(vertices_, name, 'v');
+  detail::safeInsert(vertices_, name, 'v');
 }
 
 bool gordejchik::Graph::hasVertex(const std::string& name) const
@@ -46,7 +32,7 @@ void gordejchik::Graph::addEdge(const std::string& from,
   } else {
     WeightList wl;
     wl.pushBack(weight);
-    safeInsert(edges_, key, wl);
+    detail::safeInsert(edges_, key, wl);
   }
 }
 
@@ -119,6 +105,6 @@ void gordejchik::readGraphs(const std::string& filename,
       g.addEdge(from, to, weight);
       ++i;
     }
-    safeInsert(graphs, graphName, g);
+    detail::safeInsert(graphs, graphName, g);
   }
 }
