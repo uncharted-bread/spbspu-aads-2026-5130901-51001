@@ -65,19 +65,19 @@ namespace gordejchik {
   template< class T >
   T& LIter< T >::operator*() const
   {
-    return static_cast< Node* >(node_)->value_;
+    return static_cast< Node* >(node_)->value;
   }
 
   template< class T >
   T* LIter< T >::operator->() const
   {
-    return &(static_cast< Node* >(node_)->value_);
+    return &(static_cast< Node* >(node_)->value);
   }
 
   template< class T >
   LIter< T >& LIter< T >::operator++()
   {
-    node_ = node_->next_;
+    node_ = node_->next;
     return *this;
   }
 
@@ -85,14 +85,14 @@ namespace gordejchik {
   LIter< T > LIter< T >::operator++(int)
   {
     LIter tmp(*this);
-    node_ = node_->next_;
+    node_ = node_->next;
     return tmp;
   }
 
   template< class T >
   LIter< T >& LIter< T >::operator--()
   {
-    node_ = node_->prev_;
+    node_ = node_->prev;
     return *this;
   }
 
@@ -100,7 +100,7 @@ namespace gordejchik {
   LIter< T > LIter< T >::operator--(int)
   {
     LIter tmp(*this);
-    node_ = node_->prev_;
+    node_ = node_->prev;
     return tmp;
   }
 
@@ -134,19 +134,19 @@ namespace gordejchik {
   template< class T >
   const T& LCIter< T >::operator*() const
   {
-    return static_cast< const Node* >(node_)->value_;
+    return static_cast< const Node* >(node_)->value;
   }
 
   template< class T >
   const T* LCIter< T >::operator->() const
   {
-    return &(static_cast< const Node* >(node_)->value_);
+    return &(static_cast< const Node* >(node_)->value);
   }
 
   template< class T >
   LCIter< T >& LCIter< T >::operator++()
   {
-    node_ = node_->next_;
+    node_ = node_->next;
     return *this;
   }
 
@@ -154,14 +154,14 @@ namespace gordejchik {
   LCIter< T > LCIter< T >::operator++(int)
   {
     LCIter tmp(*this);
-    node_ = node_->next_;
+    node_ = node_->next;
     return tmp;
   }
 
   template< class T >
   LCIter< T >& LCIter< T >::operator--()
   {
-    node_ = node_->prev_;
+    node_ = node_->prev;
     return *this;
   }
 
@@ -169,7 +169,7 @@ namespace gordejchik {
   LCIter< T > LCIter< T >::operator--(int)
   {
     LCIter tmp(*this);
-    node_ = node_->prev_;
+    node_ = node_->prev;
     return tmp;
   }
 
