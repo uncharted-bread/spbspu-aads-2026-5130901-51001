@@ -15,19 +15,19 @@ namespace gordejchik {
     friend class List< T >;
     friend class LCIter< T >;
   public:
-    LIter();
-    T& operator*() const;
-    T* operator->() const;
-    LIter& operator++();
-    LIter operator++(int);
-    LIter& operator--();
-    LIter operator--(int);
-    bool operator==(const LIter& rhs) const;
-    bool operator!=(const LIter& rhs) const;
+    LIter() noexcept;
+    T& operator*() const noexcept;
+    T* operator->() const noexcept;
+    LIter& operator++() noexcept;
+    LIter operator++(int) noexcept;
+    LIter& operator--() noexcept;
+    LIter operator--(int) noexcept;
+    bool operator==(const LIter& rhs) const noexcept;
+    bool operator!=(const LIter& rhs) const noexcept;
   private:
     using BaseNode = detail::BaseNode;
     using Node = detail::Node< T >;
-    explicit LIter(BaseNode* node);
+    explicit LIter(BaseNode* node) noexcept;
     BaseNode* node_;
   };
 
@@ -35,54 +35,54 @@ namespace gordejchik {
   class LCIter {
     friend class List< T >;
   public:
-    LCIter();
-    LCIter(const LIter< T >& other);
-    const T& operator*() const;
-    const T* operator->() const;
-    LCIter& operator++();
-    LCIter operator++(int);
-    LCIter& operator--();
-    LCIter operator--(int);
-    bool operator==(const LCIter& rhs) const;
-    bool operator!=(const LCIter& rhs) const;
+    LCIter() noexcept;
+    LCIter(const LIter< T >& other) noexcept;
+    const T& operator*() const noexcept;
+    const T* operator->() const noexcept;
+    LCIter& operator++() noexcept;
+    LCIter operator++(int) noexcept;
+    LCIter& operator--() noexcept;
+    LCIter operator--(int) noexcept;
+    bool operator==(const LCIter& rhs) const noexcept;
+    bool operator!=(const LCIter& rhs) const noexcept;
   private:
     using BaseNode = detail::BaseNode;
     using Node = detail::Node< T >;
-    explicit LCIter(const BaseNode* node);
+    explicit LCIter(const BaseNode* node) noexcept;
     const BaseNode* node_;
   };
 
   template< class T >
-  LIter< T >::LIter():
+  LIter< T >::LIter() noexcept:
     node_(nullptr)
   {}
 
   template< class T >
-  LIter< T >::LIter(BaseNode* node):
+  LIter< T >::LIter(BaseNode* node) noexcept:
     node_(node)
   {}
 
   template< class T >
-  T& LIter< T >::operator*() const
+  T& LIter< T >::operator*() const noexcept
   {
     return static_cast< Node* >(node_)->value;
   }
 
   template< class T >
-  T* LIter< T >::operator->() const
+  T* LIter< T >::operator->() const noexcept
   {
     return &(static_cast< Node* >(node_)->value);
   }
 
   template< class T >
-  LIter< T >& LIter< T >::operator++()
+  LIter< T >& LIter< T >::operator++() noexcept
   {
     node_ = node_->next;
     return *this;
   }
 
   template< class T >
-  LIter< T > LIter< T >::operator++(int)
+  LIter< T > LIter< T >::operator++(int) noexcept
   {
     LIter tmp(*this);
     node_ = node_->next;
@@ -90,14 +90,14 @@ namespace gordejchik {
   }
 
   template< class T >
-  LIter< T >& LIter< T >::operator--()
+  LIter< T >& LIter< T >::operator--() noexcept
   {
     node_ = node_->prev;
     return *this;
   }
 
   template< class T >
-  LIter< T > LIter< T >::operator--(int)
+  LIter< T > LIter< T >::operator--(int) noexcept
   {
     LIter tmp(*this);
     node_ = node_->prev;
@@ -105,53 +105,53 @@ namespace gordejchik {
   }
 
   template< class T >
-  bool LIter< T >::operator==(const LIter& rhs) const
+  bool LIter< T >::operator==(const LIter& rhs) const noexcept
   {
     return node_ == rhs.node_;
   }
 
   template< class T >
-  bool LIter< T >::operator!=(const LIter& rhs) const
+  bool LIter< T >::operator!=(const LIter& rhs) const noexcept
   {
     return node_ != rhs.node_;
   }
 
   template< class T >
-  LCIter< T >::LCIter():
+  LCIter< T >::LCIter() noexcept:
     node_(nullptr)
   {}
 
   template< class T >
-  LCIter< T >::LCIter(const LIter< T >& other):
+  LCIter< T >::LCIter(const LIter< T >& other) noexcept:
     node_(other.node_)
   {}
 
   template< class T >
-  LCIter< T >::LCIter(const BaseNode* node):
+  LCIter< T >::LCIter(const BaseNode* node) noexcept:
     node_(node)
   {}
 
   template< class T >
-  const T& LCIter< T >::operator*() const
+  const T& LCIter< T >::operator*() const noexcept
   {
     return static_cast< const Node* >(node_)->value;
   }
 
   template< class T >
-  const T* LCIter< T >::operator->() const
+  const T* LCIter< T >::operator->() const noexcept
   {
     return &(static_cast< const Node* >(node_)->value);
   }
 
   template< class T >
-  LCIter< T >& LCIter< T >::operator++()
+  LCIter< T >& LCIter< T >::operator++() noexcept
   {
     node_ = node_->next;
     return *this;
   }
 
   template< class T >
-  LCIter< T > LCIter< T >::operator++(int)
+  LCIter< T > LCIter< T >::operator++(int) noexcept
   {
     LCIter tmp(*this);
     node_ = node_->next;
@@ -159,14 +159,14 @@ namespace gordejchik {
   }
 
   template< class T >
-  LCIter< T >& LCIter< T >::operator--()
+  LCIter< T >& LCIter< T >::operator--() noexcept
   {
     node_ = node_->prev;
     return *this;
   }
 
   template< class T >
-  LCIter< T > LCIter< T >::operator--(int)
+  LCIter< T > LCIter< T >::operator--(int) noexcept
   {
     LCIter tmp(*this);
     node_ = node_->prev;
@@ -174,13 +174,13 @@ namespace gordejchik {
   }
 
   template< class T >
-  bool LCIter< T >::operator==(const LCIter& rhs) const
+  bool LCIter< T >::operator==(const LCIter& rhs) const noexcept
   {
     return node_ == rhs.node_;
   }
 
   template< class T >
-  bool LCIter< T >::operator!=(const LCIter& rhs) const
+  bool LCIter< T >::operator!=(const LCIter& rhs) const noexcept
   {
     return node_ != rhs.node_;
   }
