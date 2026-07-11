@@ -43,23 +43,20 @@ bool gordejchik::Graph::removeEdge(const std::string& from,
   if (!edges_.contains(key)) {
     return false;
   }
-  WeightList& wl = edges_.at(key);
-  WeightList newList;
+  WeightList& weights = edges_.at(key);
   bool removed = false;
-  for (LCIter< size_t > it = wl.cbegin(); it != wl.cend(); ++it) {
-    if (!removed && *it == weight) {
+  for (WeightList::iterator it = weights.begin(); it != weights.end(); ++it) {
+    if (*it == weight) {
+      weights.erase(it);
       removed = true;
-    } else {
-      newList.pushBack(*it);
+      break;
     }
   }
   if (!removed) {
     return false;
   }
-  if (newList.empty()) {
+  if (weights.empty()) {
     edges_.erase(key);
-  } else {
-    wl = newList;
   }
   return true;
 }
