@@ -13,10 +13,6 @@ namespace gordejchik {
     std::string name;
     while (std::cin >> name) {
       NamedList namedList{name, {}};
-      if (std::cin.eof()) {
-        namedLists.pushBack(std::move(namedList));
-        break;
-      }
       size_t num = 0;
       while (std::cin >> num) {
         namedList.nums.pushBack(num);
