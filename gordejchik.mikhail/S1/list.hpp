@@ -57,6 +57,10 @@ namespace gordejchik {
     template< class Compare >
     void merge(List& other, Compare cmp);
 
+    void sort();
+    template< class Compare >
+    void sort(Compare cmp);
+
   private:
     using BaseNode = detail::BaseNode;
     using Node = detail::Node< T >;
@@ -376,6 +380,31 @@ namespace gordejchik {
       }
     }
     splice(cend(), other);
+  }
+
+  template< class T >
+  void List< T >::sort()
+  {
+    sort(std::less< T >());
+  }
+
+  template< class T >
+  template< class Compare >
+  void List< T >::sort(Compare cmp)
+  {
+    if (size_ < 2) {
+      return;
+    }
+    const size_t half = size_ / 2;
+    const_iterator mid = cbegin();
+    for (size_t i = 0; i < half; ++i) {
+      ++mid;
+    }
+    List second;
+    second.splice(second.cend(), *this, mid, cend());
+    sort(cmp);
+    second.sort(cmp);
+    merge(second, cmp);
   }
 }
 
