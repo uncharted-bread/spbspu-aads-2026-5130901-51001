@@ -3,9 +3,13 @@
 #include <stdexcept>
 #include "safe-insert.hpp"
 
+static const size_t initialVertexBuckets = 8;
+static const size_t initialEdgeBuckets = 16;
+static const size_t initialBucketSize = 4;
+
 gordejchik::Graph::Graph():
-  vertices_(8, 4),
-  edges_(16, 4)
+  vertices_(initialVertexBuckets, initialBucketSize),
+  edges_(initialEdgeBuckets, initialBucketSize)
 {}
 
 void gordejchik::Graph::addVertex(const std::string& name)
@@ -86,7 +90,7 @@ void gordejchik::readGraphs(const std::string& filename,
 {
   std::ifstream file(filename);
   if (!file) {
-    throw std::runtime_error("Не получается открыть файл: " + filename);
+    throw std::runtime_error("Cannot open file: " + filename);
   }
   std::string graphName;
   size_t edgeCount = 0;

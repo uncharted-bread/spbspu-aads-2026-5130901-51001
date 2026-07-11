@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <iostream>
 #include <string>
 #include "hash-table.hpp"
@@ -12,13 +13,16 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  gordejchik::GraphCollection graphs(8, 4);
+  const size_t graphBuckets = 8;
+  const size_t commandBuckets = 16;
+  const size_t bucketSize = 4;
+  gordejchik::GraphCollection graphs(graphBuckets, bucketSize);
 
   try {
     gordejchik::readGraphs(argv[1], graphs);
   } catch (const std::exception& e) {
     std::cerr << e.what() << "\n";
-    return 2;
+    return 1;
   }
 
   using CmdFunc = void(*)(const std::string&, std::ostream&,
@@ -26,7 +30,7 @@ int main(int argc, char** argv)
   using CmdTable = gordejchik::HashTable< std::string, CmdFunc,
       gordejchik::Sha1Hash< std::string >, gordejchik::StringEqual >;
 
-  CmdTable cmds(16, 4);
+  CmdTable cmds(commandBuckets, bucketSize);
   cmds.insert("graphs", &gordejchik::cmdGraphs);
   cmds.insert("vertexes", &gordejchik::cmdVertexes);
   cmds.insert("outbound", &gordejchik::cmdOutbound);
@@ -55,6 +59,7 @@ int main(int argc, char** argv)
         cmds.at(cmd)(rest, std::cout, graphs);
       } catch (const std::exception& e) {
         std::cerr << "Internal error: " << e.what() << "\n";
+        return 2;
       }
     } else {
       std::cout << "<INVALID COMMAND>\n";

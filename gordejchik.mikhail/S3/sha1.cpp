@@ -58,7 +58,7 @@ static void processBlock(const uint8_t block[64], uint32_t h[5])
 static size_t digestToSizeT(const gordejchik::sha1_digest_t& digest)
 {
   size_t result = 0;
-  for (size_t i = 0; i < sizeof(size_t) && i < 20; ++i) {
+  for (size_t i = 0; i < sizeof(size_t) && i < sizeof(digest.bytes); ++i) {
     result = (result << 8) | digest.bytes[i];
   }
   return result;
