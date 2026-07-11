@@ -61,6 +61,9 @@ namespace gordejchik {
     template< class Compare >
     void sort(Compare cmp);
 
+    template< class Predicate >
+    iterator partition(Predicate pred);
+
   private:
     using BaseNode = detail::BaseNode;
     using Node = detail::Node< T >;
@@ -405,6 +408,24 @@ namespace gordejchik {
     sort(cmp);
     second.sort(cmp);
     merge(second, cmp);
+  }
+
+  template< class T >
+  template< class Predicate >
+  typename List< T >::iterator List< T >::partition(Predicate pred)
+  {
+    List matched;
+    const_iterator it = cbegin();
+    while (it != cend()) {
+      const_iterator cur = it;
+      ++it;
+      if (pred(*cur)) {
+        matched.splice(matched.cend(), *this, cur);
+      }
+    }
+    iterator boundary = begin();
+    splice(cbegin(), matched);
+    return boundary;
   }
 }
 
