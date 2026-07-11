@@ -1,5 +1,5 @@
-#ifndef SHA1_HPP
-#define SHA1_HPP
+#ifndef GORDEJCHIK_SHA1_HPP
+#define GORDEJCHIK_SHA1_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -27,20 +27,13 @@ namespace gordejchik {
   };
 
   struct StringEqual {
-    bool operator()(const std::string& a, const std::string& b) const
-    {
-      return a == b;
-    }
+    bool operator()(const std::string& a, const std::string& b) const;
   };
 
   struct PairStringEqual {
     bool operator()(const std::pair< std::string, std::string >& a,
-        const std::pair< std::string, std::string >& b) const
-    {
-      return a.first == b.first && a.second == b.second;
-    }
+        const std::pair< std::string, std::string >& b) const;
   };
-
 }
 
 #endif

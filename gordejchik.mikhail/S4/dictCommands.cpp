@@ -1,9 +1,33 @@
 #include "dictCommands.hpp"
-#include <iostream>
+#include <istream>
+#include <ostream>
 #include <sstream>
 #include <string>
 
-void gordejchik::readDicts(DictOfDicts& dicts, std::istream& in)
+static void printInvalid(std::ostream& out)
+{
+  out << "<INVALID COMMAND>\n";
+}
+
+static bool hasNoExtraArgs(std::istream& in)
+{
+  std::string extra;
+  return !(in >> extra);
+}
+
+static bool readSetOpNames(std::istream& in, std::string& newName,
+    std::string& name1, std::string& name2)
+{
+  return static_cast< bool >(in >> newName >> name1 >> name2) && hasNoExtraArgs(in);
+}
+
+static bool isSetOpValid(const gordejchik::DictOfDicts& dicts,
+    const std::string& newName, const std::string& name1, const std::string& name2)
+{
+  return !dicts.contains(newName) && dicts.contains(name1) && dicts.contains(name2);
+}
+
+bool gordejchik::readDicts(DictOfDicts& dicts, std::istream& in)
 {
   std::string line;
   while (std::getline(in, line)) {
@@ -15,29 +39,32 @@ void gordejchik::readDicts(DictOfDicts& dicts, std::istream& in)
     iss >> name;
     Dict dict;
     int key = 0;
-    std::string value;
-    while (iss >> key >> value) {
+    while (iss >> key) {
+      std::string value;
+      if (!(iss >> value)) {
+        return false;
+      }
       dict.push(key, value);
     }
-    dicts.push(name, dict);
+    if (!iss.eof()) {
+      return false;
+    }
+    dicts[name].swap(dict);
   }
+  return true;
 }
 
 void gordejchik::doPrint(const DictOfDicts& dicts, std::istream& in,
     std::ostream& out)
 {
   std::string name;
-  if (!(in >> name)) {
-    out << "<INVALID COMMAND>" << "\n";
-    return;
-  }
-  if (!dicts.contains(name)) {
-    out << "<INVALID COMMAND>" << "\n";
+  if (!(in >> name) || !hasNoExtraArgs(in) || !dicts.contains(name)) {
+    printInvalid(out);
     return;
   }
   const Dict& dict = dicts.get(name);
   if (dict.empty()) {
-    out << "<EMPTY>" << "\n";
+    out << "<EMPTY>\n";
     return;
   }
   out << name;
@@ -47,33 +74,15 @@ void gordejchik::doPrint(const DictOfDicts& dicts, std::istream& in,
   out << "\n";
 }
 
-static bool readThreeNames(std::istream& in, std::string& newName,
-    std::string& name1, std::string& name2)
-{
-  return static_cast< bool >(in >> newName >> name1 >> name2);
-}
-
-static bool validateSetOp(const gordejchik::DictOfDicts& dicts,
-    const std::string& newName, const std::string& name1,
-    const std::string& name2, std::ostream& out)
-{
-  if (dicts.contains(newName) || !dicts.contains(name1)
-      || !dicts.contains(name2)) {
-    out << "<INVALID COMMAND>" << "\n";
-    return false;
-  }
-  return true;
-}
-
 void gordejchik::doComplement(DictOfDicts& dicts, std::istream& in,
     std::ostream& out)
 {
-  std::string newName, name1, name2;
-  if (!readThreeNames(in, newName, name1, name2)) {
-    out << "<INVALID COMMAND>" << "\n";
-    return;
-  }
-  if (!validateSetOp(dicts, newName, name1, name2, out)) {
+  std::string newName;
+  std::string name1;
+  std::string name2;
+  const bool argsOk = readSetOpNames(in, newName, name1, name2);
+  if (!argsOk || !isSetOpValid(dicts, newName, name1, name2)) {
+    printInvalid(out);
     return;
   }
   const Dict& d1 = dicts.get(name1);
@@ -84,18 +93,18 @@ void gordejchik::doComplement(DictOfDicts& dicts, std::istream& in,
       result.push(it->first, it->second);
     }
   }
-  dicts.push(newName, result);
+  dicts[newName].swap(result);
 }
 
 void gordejchik::doIntersect(DictOfDicts& dicts, std::istream& in,
     std::ostream& out)
 {
-  std::string newName, name1, name2;
-  if (!readThreeNames(in, newName, name1, name2)) {
-    out << "<INVALID COMMAND>" << "\n";
-    return;
-  }
-  if (!validateSetOp(dicts, newName, name1, name2, out)) {
+  std::string newName;
+  std::string name1;
+  std::string name2;
+  const bool argsOk = readSetOpNames(in, newName, name1, name2);
+  if (!argsOk || !isSetOpValid(dicts, newName, name1, name2)) {
+    printInvalid(out);
     return;
   }
   const Dict& d1 = dicts.get(name1);
@@ -106,18 +115,18 @@ void gordejchik::doIntersect(DictOfDicts& dicts, std::istream& in,
       result.push(it->first, it->second);
     }
   }
-  dicts.push(newName, result);
+  dicts[newName].swap(result);
 }
 
 void gordejchik::doUnion(DictOfDicts& dicts, std::istream& in,
     std::ostream& out)
 {
-  std::string newName, name1, name2;
-  if (!readThreeNames(in, newName, name1, name2)) {
-    out << "<INVALID COMMAND>" << "\n";
-    return;
-  }
-  if (!validateSetOp(dicts, newName, name1, name2, out)) {
+  std::string newName;
+  std::string name1;
+  std::string name2;
+  const bool argsOk = readSetOpNames(in, newName, name1, name2);
+  if (!argsOk || !isSetOpValid(dicts, newName, name1, name2)) {
+    printInvalid(out);
     return;
   }
   const Dict& d1 = dicts.get(name1);
@@ -129,5 +138,5 @@ void gordejchik::doUnion(DictOfDicts& dicts, std::istream& in,
   for (Dict::const_iterator it = d1.cbegin(); it != d1.cend(); ++it) {
     result.push(it->first, it->second);
   }
-  dicts.push(newName, result);
+  dicts[newName].swap(result);
 }

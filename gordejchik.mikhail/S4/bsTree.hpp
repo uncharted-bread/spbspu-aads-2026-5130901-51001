@@ -11,16 +11,18 @@ namespace gordejchik {
   namespace detail {
     template< class Key, class Value >
     struct BSTNode {
-      std::pair< Key, Value > data_;
-      BSTNode* left_;
-      BSTNode* right_;
-      BSTNode* parent_;
+      std::pair< Key, Value > data;
+      BSTNode* left;
+      BSTNode* right;
+      BSTNode* parent;
+      size_t height;
 
-      BSTNode(const Key& k, const Value& v, BSTNode* parent):
-        data_(k, v),
-        left_(nullptr),
-        right_(nullptr),
-        parent_(parent)
+      BSTNode(const Key& k, const Value& v, BSTNode* parentNode):
+        data(k, v),
+        left(nullptr),
+        right(nullptr),
+        parent(parentNode),
+        height(1)
       {}
     };
 
@@ -30,8 +32,8 @@ namespace gordejchik {
       if (!node) {
         return nullptr;
       }
-      while (node->left_) {
-        node = node->left_;
+      while (node->left) {
+        node = node->left;
       }
       return node;
     }
@@ -42,8 +44,8 @@ namespace gordejchik {
       if (!node) {
         return nullptr;
       }
-      while (node->right_) {
-        node = node->right_;
+      while (node->right) {
+        node = node->right;
       }
       return node;
     }
@@ -51,13 +53,13 @@ namespace gordejchik {
     template< class Key, class Value >
     BSTNode< Key, Value >* nextInOrder(BSTNode< Key, Value >* node)
     {
-      if (node->right_) {
-        return leftmost< Key, Value >(node->right_);
+      if (node->right) {
+        return leftmost< Key, Value >(node->right);
       }
-      BSTNode< Key, Value >* parent = node->parent_;
-      while (parent && node == parent->right_) {
+      BSTNode< Key, Value >* parent = node->parent;
+      while (parent && node == parent->right) {
         node = parent;
-        parent = parent->parent_;
+        parent = parent->parent;
       }
       return parent;
     }
@@ -65,13 +67,13 @@ namespace gordejchik {
     template< class Key, class Value >
     BSTNode< Key, Value >* prevInOrder(BSTNode< Key, Value >* node)
     {
-      if (node->left_) {
-        return rightmost< Key, Value >(node->left_);
+      if (node->left) {
+        return rightmost< Key, Value >(node->left);
       }
-      BSTNode< Key, Value >* parent = node->parent_;
-      while (parent && node == parent->left_) {
+      BSTNode< Key, Value >* parent = node->parent;
+      while (parent && node == parent->left) {
         node = parent;
-        parent = parent->parent_;
+        parent = parent->parent;
       }
       return parent;
     }
@@ -86,7 +88,6 @@ namespace gordejchik {
     friend class BSTConstIterator< Key, Value >;
 
   public:
-    using Node_ = detail::BSTNode< Key, Value >;
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = std::pair< Key, Value >;
     using difference_type = std::ptrdiff_t;
@@ -100,12 +101,12 @@ namespace gordejchik {
 
     reference operator*() const
     {
-      return node_->data_;
+      return node_->data;
     }
 
     pointer operator->() const
     {
-      return &node_->data_;
+      return &node_->data;
     }
 
     BSTIterator& operator++()
@@ -149,10 +150,12 @@ namespace gordejchik {
     }
 
   private:
-    Node_* node_;
-    Node_** rootAddr_;
+    using Node = detail::BSTNode< Key, Value >;
 
-    BSTIterator(Node_* node, Node_** rootAddr):
+    Node* node_;
+    Node** rootAddr_;
+
+    BSTIterator(Node* node, Node** rootAddr):
       node_(node),
       rootAddr_(rootAddr)
     {}
@@ -164,7 +167,6 @@ namespace gordejchik {
     friend class BSTree;
 
   public:
-    using Node_ = detail::BSTNode< Key, Value >;
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = std::pair< Key, Value >;
     using difference_type = std::ptrdiff_t;
@@ -183,12 +185,12 @@ namespace gordejchik {
 
     reference operator*() const
     {
-      return node_->data_;
+      return node_->data;
     }
 
     pointer operator->() const
     {
-      return &node_->data_;
+      return &node_->data;
     }
 
     BSTConstIterator& operator++()
@@ -232,10 +234,12 @@ namespace gordejchik {
     }
 
   private:
-    Node_* node_;
-    Node_** rootAddr_;
+    using Node = detail::BSTNode< Key, Value >;
 
-    BSTConstIterator(Node_* node, Node_** rootAddr):
+    Node* node_;
+    Node* const* rootAddr_;
+
+    BSTConstIterator(Node* node, Node* const* rootAddr):
       node_(node),
       rootAddr_(rootAddr)
     {}
@@ -254,9 +258,56 @@ namespace gordejchik {
       cmp_()
     {}
 
+    BSTree(const BSTree& other):
+      root_(nullptr),
+      size_(0),
+      cmp_(other.cmp_)
+    {
+      root_ = cloneSubtree(other.root_, nullptr);
+      size_ = other.size_;
+    }
+
+    BSTree(BSTree&& other):
+      root_(other.root_),
+      size_(other.size_),
+      cmp_(other.cmp_)
+    {
+      other.root_ = nullptr;
+      other.size_ = 0;
+    }
+
     ~BSTree()
     {
       clear();
+    }
+
+    BSTree& operator=(const BSTree& other)
+    {
+      if (this != &other) {
+        BSTree tmp(other);
+        swap(tmp);
+      }
+      return *this;
+    }
+
+    BSTree& operator=(BSTree&& other)
+    {
+      if (this != &other) {
+        clear();
+        root_ = other.root_;
+        size_ = other.size_;
+        cmp_ = other.cmp_;
+        other.root_ = nullptr;
+        other.size_ = 0;
+      }
+      return *this;
+    }
+
+    Value& operator[](const Key& k)
+    {
+      bool inserted = false;
+      Node* node = insertNode(k, Value(), inserted);
+      return node->data.second;
     }
 
     bool empty() const
@@ -278,67 +329,34 @@ namespace gordejchik {
 
     void push(const Key& k, const Value& v)
     {
-      if (!root_) {
-        root_ = new Node_(k, v, nullptr);
-        ++size_;
-        return;
-      }
-      Node_* cur = root_;
-      while (cur) {
-        if (cmp_(k, cur->data_.first)) {
-          if (cur->left_) {
-            cur = cur->left_;
-          } else {
-            cur->left_ = new Node_(k, v, cur);
-            ++size_;
-            return;
-          }
-        } else if (cmp_(cur->data_.first, k)) {
-          if (cur->right_) {
-            cur = cur->right_;
-          } else {
-            cur->right_ = new Node_(k, v, cur);
-            ++size_;
-            return;
-          }
-        } else {
-          cur->data_.second = v;
-          return;
-        }
+      bool inserted = false;
+      Node* node = insertNode(k, v, inserted);
+      if (!inserted) {
+        node->data.second = v;
       }
     }
 
     const Value& get(const Key& k) const
     {
-      const Node_* node = findNode(k);
+      const Node* node = findNode(k);
       if (!node) {
-        throw std::out_of_range("BSTree: ключ не найден");
+        throw std::out_of_range("BSTree: key not found");
       }
-      return node->data_.second;
+      return node->data.second;
     }
 
     Value& get(const Key& k)
     {
-      Node_* node = findNode(k);
+      Node* node = findNode(k);
       if (!node) {
-        throw std::out_of_range("BSTree: ключ не найден");
+        throw std::out_of_range("BSTree: key not found");
       }
-      return node->data_.second;
+      return node->data.second;
     }
 
     bool contains(const Key& k) const
     {
       return findNode(k) != nullptr;
-    }
-
-    Value& operator[](const Key& k)
-    {
-      Node_* node = findNode(k);
-      if (node) {
-        return node->data_.second;
-      }
-      push(k, Value());
-      return findNode(k)->data_.second;
     }
 
     iterator begin()
@@ -363,14 +381,12 @@ namespace gordejchik {
 
     const_iterator cbegin() const
     {
-      Node_** addr = const_cast< Node_** >(&root_);
-      return const_iterator(detail::leftmost< Key, Value >(root_), addr);
+      return const_iterator(detail::leftmost< Key, Value >(root_), &root_);
     }
 
     const_iterator cend() const
     {
-      Node_** addr = const_cast< Node_** >(&root_);
-      return const_iterator(nullptr, addr);
+      return const_iterator(nullptr, &root_);
     }
 
     iterator find(const Key& k)
@@ -380,204 +396,125 @@ namespace gordejchik {
 
     const_iterator find(const Key& k) const
     {
-      Node_** addr = const_cast< Node_** >(&root_);
-      return const_iterator(findNode(k), addr);
+      return const_iterator(findNode(k), &root_);
     }
 
     iterator erase(const_iterator pos)
     {
-      Node_* node = pos.node_;
+      Node* node = pos.node_;
       if (!node) {
         return end();
       }
-      Node_* next = detail::nextInOrder< Key, Value >(node);
+      Node* next = detail::nextInOrder< Key, Value >(node);
       eraseNode(node);
-      --size_;
       return iterator(next, &root_);
     }
 
     Value drop(const Key& k)
     {
-      Node_* node = findNode(k);
+      Node* node = findNode(k);
       if (!node) {
-        throw std::out_of_range("BSTree: ключ не найден");
+        throw std::out_of_range("BSTree: key not found");
       }
-      Value result = node->data_.second;
+      Value result = node->data.second;
       eraseNode(node);
-      --size_;
       return result;
     }
 
     const_iterator rotateRight(const_iterator pos)
     {
-      Node_* node = pos.node_;
-      if (!node || !node->parent_) {
+      Node* node = pos.node_;
+      if (!node || !node->parent) {
         throw std::logic_error("BSTree: cannot rotate");
       }
-      Node_* parent = node->parent_;
-      if (parent->left_ != node) {
+      if (node->parent->left != node) {
         throw std::logic_error("BSTree: rotateRight requires left child");
       }
-      Node_* grandparent = parent->parent_;
-      parent->left_ = node->right_;
-      if (node->right_) {
-        node->right_->parent_ = parent;
-      }
-      node->right_ = parent;
-      parent->parent_ = node;
-      node->parent_ = grandparent;
-      if (!grandparent) {
-        root_ = node;
-      } else if (grandparent->left_ == parent) {
-        grandparent->left_ = node;
-      } else {
-        grandparent->right_ = node;
-      }
-      Node_** addr = const_cast< Node_** >(&root_);
-      return const_iterator(node, addr);
+      rotateRightNode(node);
+      updateHeightsUp(node->parent);
+      return const_iterator(node, &root_);
     }
 
     const_iterator rotateLeft(const_iterator pos)
     {
-      Node_* node = pos.node_;
-      if (!node || !node->parent_) {
+      Node* node = pos.node_;
+      if (!node || !node->parent) {
         throw std::logic_error("BSTree: cannot rotate");
       }
-      Node_* parent = node->parent_;
-      if (parent->right_ != node) {
+      if (node->parent->right != node) {
         throw std::logic_error("BSTree: rotateLeft requires right child");
       }
-      Node_* grandparent = parent->parent_;
-      parent->right_ = node->left_;
-      if (node->left_) {
-        node->left_->parent_ = parent;
-      }
-      node->left_ = parent;
-      parent->parent_ = node;
-      node->parent_ = grandparent;
-      if (!grandparent) {
-        root_ = node;
-      } else if (grandparent->left_ == parent) {
-        grandparent->left_ = node;
-      } else {
-        grandparent->right_ = node;
-      }
-      Node_** addr = const_cast< Node_** >(&root_);
-      return const_iterator(node, addr);
+      rotateLeftNode(node);
+      updateHeightsUp(node->parent);
+      return const_iterator(node, &root_);
     }
 
     const_iterator rotateLargeRight(const_iterator pos)
     {
-      Node_* node = pos.node_;
-      if (!node || !node->parent_ || !node->parent_->parent_) {
-        throw std::logic_error("BSTree: cannot large rotate");
+      Node* node = pos.node_;
+      if (!node || !node->parent || !node->parent->parent) {
+        throw std::logic_error("BSTree: cannot do large rotation");
       }
-      Node_** addr = const_cast< Node_** >(&root_);
-      rotateLeft(const_iterator(node, addr));
-      return rotateRight(const_iterator(node, addr));
+      Node* parent = node->parent;
+      if (parent->right != node || parent->parent->left != parent) {
+        throw std::logic_error("BSTree: invalid position for large right rotation");
+      }
+      rotateLeft(const_iterator(node, &root_));
+      return rotateRight(const_iterator(node, &root_));
     }
 
     const_iterator rotateLargeLeft(const_iterator pos)
     {
-      Node_* node = pos.node_;
-      if (!node || !node->parent_ || !node->parent_->parent_) {
-        throw std::logic_error("BSTree: cannot large rotate");
+      Node* node = pos.node_;
+      if (!node || !node->parent || !node->parent->parent) {
+        throw std::logic_error("BSTree: cannot do large rotation");
       }
-      Node_** addr = const_cast< Node_** >(&root_);
-      rotateRight(const_iterator(node, addr));
-      return rotateLeft(const_iterator(node, addr));
+      Node* parent = node->parent;
+      if (parent->left != node || parent->parent->right != parent) {
+        throw std::logic_error("BSTree: invalid position for large left rotation");
+      }
+      rotateRight(const_iterator(node, &root_));
+      return rotateLeft(const_iterator(node, &root_));
     }
 
     size_t height(const_iterator pos) const
     {
-      return subtreeHeight(pos.node_);
+      return nodeHeight(pos.node_);
     }
 
     size_t height() const
     {
-      return subtreeHeight(root_);
-    }
-
-    BSTree(const BSTree& other):
-      root_(nullptr),
-      size_(0),
-      cmp_(other.cmp_)
-    {
-      root_ = cloneSubtree(other.root_, nullptr);
-      size_ = other.size_;
-    }
-
-    BSTree& operator=(const BSTree& other)
-    {
-      if (this != &other) {
-        BSTree tmp(other);
-        swap(tmp);
-      }
-      return *this;
-    }
-
-    BSTree(BSTree&& other):
-      root_(other.root_),
-      size_(other.size_),
-      cmp_(other.cmp_)
-    {
-      other.root_ = nullptr;
-      other.size_ = 0;
-    }
-
-    BSTree& operator=(BSTree&& other)
-    {
-      if (this != &other) {
-        clear();
-        root_ = other.root_;
-        size_ = other.size_;
-        cmp_ = other.cmp_;
-        other.root_ = nullptr;
-        other.size_ = 0;
-      }
-      return *this;
+      return nodeHeight(root_);
     }
 
     void swap(BSTree& other)
     {
-      Node_* tmpRoot = root_;
-      root_ = other.root_;
-      other.root_ = tmpRoot;
-
-      size_t tmpSize = size_;
-      size_ = other.size_;
-      other.size_ = tmpSize;
-
-      Compare tmpCmp = cmp_;
-      cmp_ = other.cmp_;
-      other.cmp_ = tmpCmp;
+      std::swap(root_, other.root_);
+      std::swap(size_, other.size_);
+      std::swap(cmp_, other.cmp_);
     }
 
-  private:
-    using Node_ = detail::BSTNode< Key, Value >;
+  protected:
+    using Node = detail::BSTNode< Key, Value >;
 
-    Node_* root_;
-    size_t size_;
-    Compare cmp_;
-
-    static void freeSubtree(Node_* node)
+    static Node* nodeOf(const_iterator pos)
     {
-      if (!node) {
-        return;
-      }
-      freeSubtree(node->left_);
-      freeSubtree(node->right_);
-      delete node;
+      return pos.node_;
     }
 
-    Node_* findNode(const Key& k) const
+    iterator makeIterator(Node* node)
     {
-      Node_* cur = root_;
+      return iterator(node, &root_);
+    }
+
+    Node* findNode(const Key& k) const
+    {
+      Node* cur = root_;
       while (cur) {
-        if (cmp_(k, cur->data_.first)) {
-          cur = cur->left_;
-        } else if (cmp_(cur->data_.first, k)) {
-          cur = cur->right_;
+        if (cmp_(k, cur->data.first)) {
+          cur = cur->left;
+        } else if (cmp_(cur->data.first, k)) {
+          cur = cur->right;
         } else {
           return cur;
         }
@@ -585,70 +522,210 @@ namespace gordejchik {
       return nullptr;
     }
 
-    void transplant(Node_* target, Node_* replacement)
+    Node* insertNode(const Key& k, const Value& v, bool& inserted)
     {
-      if (!target->parent_) {
-        root_ = replacement;
-      } else if (target == target->parent_->left_) {
-        target->parent_->left_ = replacement;
-      } else {
-        target->parent_->right_ = replacement;
+      inserted = false;
+      if (!root_) {
+        root_ = new Node(k, v, nullptr);
+        ++size_;
+        inserted = true;
+        return root_;
       }
-      if (replacement) {
-        replacement->parent_ = target->parent_;
+      Node* cur = root_;
+      while (true) {
+        if (cmp_(k, cur->data.first)) {
+          if (!cur->left) {
+            cur->left = new Node(k, v, cur);
+            ++size_;
+            updateHeightsUp(cur);
+            inserted = true;
+            return cur->left;
+          }
+          cur = cur->left;
+        } else if (cmp_(cur->data.first, k)) {
+          if (!cur->right) {
+            cur->right = new Node(k, v, cur);
+            ++size_;
+            updateHeightsUp(cur);
+            inserted = true;
+            return cur->right;
+          }
+          cur = cur->right;
+        } else {
+          return cur;
+        }
       }
     }
 
-    void eraseNode(Node_* node)
+    Node* eraseNode(Node* node)
     {
-      if (!node->left_) {
-        transplant(node, node->right_);
-      } else if (!node->right_) {
-        transplant(node, node->left_);
+      Node* fixup = node->parent;
+      if (!node->left) {
+        transplant(node, node->right);
+      } else if (!node->right) {
+        transplant(node, node->left);
       } else {
-        Node_* successor = detail::leftmost< Key, Value >(node->right_);
-        if (successor->parent_ != node) {
-          transplant(successor, successor->right_);
-          successor->right_ = node->right_;
-          successor->right_->parent_ = successor;
+        Node* successor = detail::leftmost< Key, Value >(node->right);
+        fixup = successor;
+        if (successor->parent != node) {
+          fixup = successor->parent;
+          transplant(successor, successor->right);
+          successor->right = node->right;
+          successor->right->parent = successor;
         }
         transplant(node, successor);
-        successor->left_ = node->left_;
-        successor->left_->parent_ = successor;
+        successor->left = node->left;
+        successor->left->parent = successor;
       }
       delete node;
+      --size_;
+      updateHeightsUp(fixup);
+      return fixup;
     }
 
-    static size_t subtreeHeight(const Node_* node)
+    Node* rotateRightNode(Node* node)
     {
-      if (!node) {
-        return 0;
+      Node* parent = node->parent;
+      Node* grandparent = parent->parent;
+      parent->left = node->right;
+      if (node->right) {
+        node->right->parent = parent;
       }
-      const size_t lh = subtreeHeight(node->left_);
-      const size_t rh = subtreeHeight(node->right_);
-      return 1 + (lh > rh ? lh : rh);
+      node->right = parent;
+      parent->parent = node;
+      node->parent = grandparent;
+      if (!grandparent) {
+        root_ = node;
+      } else if (grandparent->left == parent) {
+        grandparent->left = node;
+      } else {
+        grandparent->right = node;
+      }
+      updateHeight(parent);
+      updateHeight(node);
+      return node;
     }
 
-    static Node_* cloneSubtree(const Node_* src, Node_* parent)
+    Node* rotateLeftNode(Node* node)
+    {
+      Node* parent = node->parent;
+      Node* grandparent = parent->parent;
+      parent->right = node->left;
+      if (node->left) {
+        node->left->parent = parent;
+      }
+      node->left = parent;
+      parent->parent = node;
+      node->parent = grandparent;
+      if (!grandparent) {
+        root_ = node;
+      } else if (grandparent->left == parent) {
+        grandparent->left = node;
+      } else {
+        grandparent->right = node;
+      }
+      updateHeight(parent);
+      updateHeight(node);
+      return node;
+    }
+
+    static size_t nodeHeight(const Node* node)
+    {
+      return node ? node->height : 0;
+    }
+
+    static void updateHeight(Node* node)
+    {
+      const size_t lh = nodeHeight(node->left);
+      const size_t rh = nodeHeight(node->right);
+      node->height = 1 + (lh > rh ? lh : rh);
+    }
+
+  private:
+    Node* root_;
+    size_t size_;
+    Compare cmp_;
+
+    void transplant(Node* target, Node* replacement)
+    {
+      if (!target->parent) {
+        root_ = replacement;
+      } else if (target == target->parent->left) {
+        target->parent->left = replacement;
+      } else {
+        target->parent->right = replacement;
+      }
+      if (replacement) {
+        replacement->parent = target->parent;
+      }
+    }
+
+    static void updateHeightsUp(Node* node)
+    {
+      while (node) {
+        updateHeight(node);
+        node = node->parent;
+      }
+    }
+
+    static void freeSubtree(Node* root)
+    {
+      Node* cur = root;
+      while (cur) {
+        if (cur->left) {
+          cur = cur->left;
+        } else if (cur->right) {
+          cur = cur->right;
+        } else {
+          Node* parent = (cur == root) ? nullptr : cur->parent;
+          if (parent) {
+            if (parent->left == cur) {
+              parent->left = nullptr;
+            } else {
+              parent->right = nullptr;
+            }
+          }
+          delete cur;
+          cur = parent;
+        }
+      }
+    }
+
+    static Node* cloneSubtree(const Node* src, Node* parent)
     {
       if (!src) {
         return nullptr;
       }
-      Node_* copy = new Node_(src->data_.first, src->data_.second, parent);
+      Node* root = nullptr;
       try {
-        copy->left_ = cloneSubtree(src->left_, copy);
-        copy->right_ = cloneSubtree(src->right_, copy);
+        root = new Node(src->data.first, src->data.second, parent);
+        root->height = src->height;
+        const Node* from = src;
+        Node* to = root;
+        while (true) {
+          if (from->left && !to->left) {
+            from = from->left;
+            to->left = new Node(from->data.first, from->data.second, to);
+            to->left->height = from->height;
+            to = to->left;
+          } else if (from->right && !to->right) {
+            from = from->right;
+            to->right = new Node(from->data.first, from->data.second, to);
+            to->right->height = from->height;
+            to = to->right;
+          } else if (from == src) {
+            break;
+          } else {
+            from = from->parent;
+            to = to->parent;
+          }
+        }
       } catch (...) {
-        freeSubtree(copy);
+        freeSubtree(root);
         throw;
       }
-      return copy;
+      return root;
     }
-
-    template< class K, class V >
-    friend class BSTIterator;
-    template< class K, class V >
-    friend class BSTConstIterator;
   };
 
   template< class Key, class Value, class Compare >
@@ -656,7 +733,6 @@ namespace gordejchik {
   {
     a.swap(b);
   }
-
 }
 
 #endif

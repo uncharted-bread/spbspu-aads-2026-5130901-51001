@@ -1,7 +1,9 @@
 #ifndef GORDEJCHIK_LIST_HPP
 #define GORDEJCHIK_LIST_HPP
 
-#include <iostream>
+#include <cstddef>
+#include <functional>
+#include <utility>
 #include "iterator.hpp"
 
 namespace gordejchik {
@@ -47,9 +49,26 @@ namespace gordejchik {
     void clear() noexcept;
     void swap(List& other) noexcept;
 
+    void splice(const_iterator pos, List& other) noexcept;
+    void splice(const_iterator pos, List& other, const_iterator it) noexcept;
+    void splice(const_iterator pos, List& other, const_iterator first, const_iterator last) noexcept;
+
+    void merge(List& other);
+    template< class Compare >
+    void merge(List& other, Compare cmp);
+
+    void sort();
+    template< class Compare >
+    void sort(Compare cmp);
+
+    template< class Predicate >
+    iterator partition(Predicate pred);
+
   private:
     using BaseNode = detail::BaseNode;
     using Node = detail::Node< T >;
+
+    static void relink(BaseNode* pos, BaseNode* first, BaseNode* last) noexcept;
 
     void insertBefore(BaseNode* pos, Node* node) noexcept;
 
@@ -59,17 +78,17 @@ namespace gordejchik {
 
   template< class T >
   List< T >::List() noexcept:
-    fake_(),
+    fake_{&fake_, &fake_},
     size_(0)
   {}
 
   template< class T >
   List< T >::List(const List& other):
-    fake_(),
+    fake_{&fake_, &fake_},
     size_(0)
   {
     try {
-      for (auto it = other.cbegin(); it != other.cend(); ++it) {
+      for (const_iterator it = other.cbegin(); it != other.cend(); ++it) {
         pushBack(*it);
       }
     } catch (...) {
@@ -80,7 +99,7 @@ namespace gordejchik {
 
   template< class T >
   List< T >::List(List&& other) noexcept:
-    fake_(),
+    fake_{&fake_, &fake_},
     size_(0)
   {
     swap(other);
@@ -115,17 +134,17 @@ namespace gordejchik {
   template< class T >
   void List< T >::insertBefore(BaseNode* pos, Node* node) noexcept
   {
-    node->next_ = pos;
-    node->prev_ = pos->prev_;
-    pos->prev_->next_ = node;
-    pos->prev_ = node;
+    node->next = pos;
+    node->prev = pos->prev;
+    pos->prev->next = node;
+    pos->prev = node;
     ++size_;
   }
 
   template< class T >
   typename List< T >::iterator List< T >::begin() noexcept
   {
-    return iterator(fake_.next_);
+    return iterator(fake_.next);
   }
 
   template< class T >
@@ -137,7 +156,7 @@ namespace gordejchik {
   template< class T >
   typename List< T >::const_iterator List< T >::begin() const noexcept
   {
-    return const_iterator(fake_.next_);
+    return const_iterator(fake_.next);
   }
 
   template< class T >
@@ -149,7 +168,7 @@ namespace gordejchik {
   template< class T >
   typename List< T >::const_iterator List< T >::cbegin() const noexcept
   {
-    return const_iterator(fake_.next_);
+    return const_iterator(fake_.next);
   }
 
   template< class T >
@@ -161,25 +180,25 @@ namespace gordejchik {
   template< class T >
   T& List< T >::front()
   {
-    return static_cast< Node* >(fake_.next_)->value_;
+    return static_cast< Node* >(fake_.next)->value;
   }
 
   template< class T >
   const T& List< T >::front() const
   {
-    return static_cast< const Node* >(fake_.next_)->value_;
+    return static_cast< const Node* >(fake_.next)->value;
   }
 
   template< class T >
   T& List< T >::back()
   {
-    return static_cast< Node* >(fake_.prev_)->value_;
+    return static_cast< Node* >(fake_.prev)->value;
   }
 
   template< class T >
   const T& List< T >::back() const
   {
-    return static_cast< const Node* >(fake_.prev_)->value_;
+    return static_cast< const Node* >(fake_.prev)->value;
   }
 
   template< class T >
@@ -197,25 +216,25 @@ namespace gordejchik {
   template< class T >
   void List< T >::pushFront(const T& value)
   {
-    insertBefore(fake_.next_, new Node(value));
+    insertBefore(fake_.next, detail::createNode< T >(value));
   }
 
   template< class T >
   void List< T >::pushFront(T&& value)
   {
-    insertBefore(fake_.next_, new Node(static_cast< T&& >(value)));
+    insertBefore(fake_.next, detail::createNode< T >(std::move(value)));
   }
 
   template< class T >
   void List< T >::pushBack(const T& value)
   {
-    insertBefore(&fake_, new Node(value));
+    insertBefore(&fake_, detail::createNode< T >(value));
   }
 
   template< class T >
   void List< T >::pushBack(T&& value)
   {
-    insertBefore(&fake_, new Node(static_cast< T&& >(value)));
+    insertBefore(&fake_, detail::createNode< T >(std::move(value)));
   }
 
   template< class T >
@@ -227,13 +246,13 @@ namespace gordejchik {
   template< class T >
   void List< T >::popBack()
   {
-    erase(iterator(fake_.prev_));
+    erase(iterator(fake_.prev));
   }
 
   template< class T >
   typename List< T >::iterator List< T >::insert(const_iterator pos, const T& value)
   {
-    Node* node = new Node(value);
+    Node* node = detail::createNode< T >(value);
     insertBefore(const_cast< BaseNode* >(pos.node_), node);
     return iterator(node);
   }
@@ -242,10 +261,10 @@ namespace gordejchik {
   typename List< T >::iterator List< T >::erase(iterator pos)
   {
     BaseNode* node = pos.node_;
-    BaseNode* next = node->next_;
-    node->prev_->next_ = next;
-    next->prev_ = node->prev_;
-    delete static_cast< Node* >(node);
+    BaseNode* next = node->next;
+    node->prev->next = next;
+    next->prev = node->prev;
+    detail::destroyNode(static_cast< Node* >(node));
     --size_;
     return iterator(next);
   }
@@ -253,14 +272,14 @@ namespace gordejchik {
   template< class T >
   void List< T >::clear() noexcept
   {
-    BaseNode* cur = fake_.next_;
+    BaseNode* cur = fake_.next;
     while (cur != &fake_) {
-      BaseNode* next = cur->next_;
-      delete static_cast< Node* >(cur);
+      BaseNode* next = cur->next;
+      detail::destroyNode(static_cast< Node* >(cur));
       cur = next;
     }
-    fake_.next_ = &fake_;
-    fake_.prev_ = &fake_;
+    fake_.next = &fake_;
+    fake_.prev = &fake_;
     size_ = 0;
   }
 
@@ -270,33 +289,143 @@ namespace gordejchik {
     const bool thisEmpty = empty();
     const bool otherEmpty = other.empty();
 
-    BaseNode* tmpNext = fake_.next_;
-    BaseNode* tmpPrev = fake_.prev_;
-    size_t tmpSize = size_;
-
-    fake_.next_ = other.fake_.next_;
-    fake_.prev_ = other.fake_.prev_;
-    size_ = other.size_;
-
-    other.fake_.next_ = tmpNext;
-    other.fake_.prev_ = tmpPrev;
-    other.size_ = tmpSize;
+    std::swap(fake_.next, other.fake_.next);
+    std::swap(fake_.prev, other.fake_.prev);
+    std::swap(size_, other.size_);
 
     if (otherEmpty) {
-      fake_.next_ = &fake_;
-      fake_.prev_ = &fake_;
+      fake_.next = &fake_;
+      fake_.prev = &fake_;
     } else {
-      fake_.next_->prev_ = &fake_;
-      fake_.prev_->next_ = &fake_;
+      fake_.next->prev = &fake_;
+      fake_.prev->next = &fake_;
     }
 
     if (thisEmpty) {
-      other.fake_.next_ = &other.fake_;
-      other.fake_.prev_ = &other.fake_;
+      other.fake_.next = &other.fake_;
+      other.fake_.prev = &other.fake_;
     } else {
-      other.fake_.next_->prev_ = &other.fake_;
-      other.fake_.prev_->next_ = &other.fake_;
+      other.fake_.next->prev = &other.fake_;
+      other.fake_.prev->next = &other.fake_;
     }
+  }
+
+  template< class T >
+  void List< T >::relink(BaseNode* pos, BaseNode* first, BaseNode* last) noexcept
+  {
+    first->prev->next = last->next;
+    last->next->prev = first->prev;
+    first->prev = pos->prev;
+    last->next = pos;
+    pos->prev->next = first;
+    pos->prev = last;
+  }
+
+  template< class T >
+  void List< T >::splice(const_iterator pos, List& other) noexcept
+  {
+    if (other.empty()) {
+      return;
+    }
+    relink(const_cast< BaseNode* >(pos.node_), other.fake_.next, other.fake_.prev);
+    size_ += other.size_;
+    other.size_ = 0;
+  }
+
+  template< class T >
+  void List< T >::splice(const_iterator pos, List& other, const_iterator it) noexcept
+  {
+    BaseNode* node = const_cast< BaseNode* >(it.node_);
+    if (pos.node_ == node || pos.node_ == node->next) {
+      return;
+    }
+    relink(const_cast< BaseNode* >(pos.node_), node, node);
+    --other.size_;
+    ++size_;
+  }
+
+  template< class T >
+  void List< T >::splice(const_iterator pos, List& other, const_iterator first, const_iterator last) noexcept
+  {
+    if (first == last) {
+      return;
+    }
+    size_t count = 0;
+    for (const_iterator it = first; it != last; ++it) {
+      ++count;
+    }
+    BaseNode* firstNode = const_cast< BaseNode* >(first.node_);
+    BaseNode* lastNode = const_cast< BaseNode* >(last.node_)->prev;
+    relink(const_cast< BaseNode* >(pos.node_), firstNode, lastNode);
+    other.size_ -= count;
+    size_ += count;
+  }
+
+  template< class T >
+  void List< T >::merge(List& other)
+  {
+    merge(other, std::less< T >());
+  }
+
+  template< class T >
+  template< class Compare >
+  void List< T >::merge(List& other, Compare cmp)
+  {
+    if (this == &other) {
+      return;
+    }
+    iterator it = begin();
+    while (it != end() && !other.empty()) {
+      if (cmp(other.front(), *it)) {
+        splice(it, other, other.cbegin());
+      } else {
+        ++it;
+      }
+    }
+    splice(cend(), other);
+  }
+
+  template< class T >
+  void List< T >::sort()
+  {
+    sort(std::less< T >());
+  }
+
+  template< class T >
+  template< class Compare >
+  void List< T >::sort(Compare cmp)
+  {
+    if (size_ < 2) {
+      return;
+    }
+    const size_t half = size_ / 2;
+    const_iterator mid = cbegin();
+    for (size_t i = 0; i < half; ++i) {
+      ++mid;
+    }
+    List second;
+    second.splice(second.cend(), *this, mid, cend());
+    sort(cmp);
+    second.sort(cmp);
+    merge(second, cmp);
+  }
+
+  template< class T >
+  template< class Predicate >
+  typename List< T >::iterator List< T >::partition(Predicate pred)
+  {
+    List matched;
+    const_iterator it = cbegin();
+    while (it != cend()) {
+      const_iterator cur = it;
+      ++it;
+      if (pred(*cur)) {
+        matched.splice(matched.cend(), *this, cur);
+      }
+    }
+    iterator boundary = begin();
+    splice(cbegin(), matched);
+    return boundary;
   }
 }
 
