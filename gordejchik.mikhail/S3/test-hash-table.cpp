@@ -266,3 +266,99 @@ BOOST_AUTO_TEST_CASE(sha1_known_vectors)
     BOOST_TEST(longDigest.bytes[i] == longExpected[i]);
   }
 }
+
+static size_t addOneBucket(size_t count)
+{
+  return count + 1;
+}
+
+static size_t doubleBucketSize(size_t size)
+{
+  return size * 2;
+}
+
+BOOST_AUTO_TEST_CASE(spare_size_and_average)
+{
+  CollidingTable t(4, 2);
+  BOOST_TEST(t.spareSize() == 0);
+  BOOST_TEST(t.averagePerBucket() == 0.0);
+  t.insert("a", 1);
+  t.insert("b", 2);
+  t.insert("c", 3);
+  BOOST_TEST(t.spareSize() == 1);
+  BOOST_TEST(t.averagePerBucket() == 0.75);
+  t.erase("c");
+  BOOST_TEST(t.spareSize() == 0);
+}
+
+BOOST_AUTO_TEST_CASE(max_spare_size_triggers_rehash)
+{
+  CollidingTable t(4, 2);
+  t.setMaxSpareSize(0);
+  t.setRehashPolicy(addOneBucket, doubleBucketSize);
+  t.insert("a", 1);
+  t.insert("b", 2);
+  BOOST_TEST(t.bucketCount() == 4);
+  t.insert("c", 3);
+  BOOST_TEST(t.bucketCount() == 5);
+  BOOST_TEST(t.getBucketSize() == 4);
+  BOOST_TEST(t.spareSize() == 0);
+  BOOST_TEST(t.size() == 3);
+  BOOST_TEST(t.at("a") == 1);
+  BOOST_TEST(t.at("b") == 2);
+  BOOST_TEST(t.at("c") == 3);
+}
+
+BOOST_AUTO_TEST_CASE(max_average_triggers_rehash_with_default_policy)
+{
+  Table t(2, 2);
+  t.setMaxAveragePerBucket(1.0);
+  t.insert("one", 1);
+  t.insert("two", 2);
+  BOOST_TEST(t.bucketCount() == 2);
+  t.insert("three", 3);
+  BOOST_TEST(t.bucketCount() == 4);
+  BOOST_TEST(t.getBucketSize() == 2);
+  BOOST_TEST(t.size() == 3);
+  BOOST_TEST(t.at("one") == 1);
+  BOOST_TEST(t.at("two") == 2);
+  BOOST_TEST(t.at("three") == 3);
+}
+
+BOOST_AUTO_TEST_CASE(limits_persist_after_rehash)
+{
+  Table t(2, 2);
+  t.setMaxAveragePerBucket(1.0);
+  t.insert("k1", 1);
+  t.insert("k2", 2);
+  t.insert("k3", 3);
+  BOOST_TEST(t.bucketCount() == 4);
+  t.insert("k4", 4);
+  BOOST_TEST(t.bucketCount() == 4);
+  t.insert("k5", 5);
+  BOOST_TEST(t.bucketCount() == 8);
+  BOOST_TEST(t.size() == 5);
+}
+
+BOOST_AUTO_TEST_CASE(rehash_policy_survives_copy)
+{
+  CollidingTable t(4, 2);
+  t.setMaxSpareSize(0);
+  t.setRehashPolicy(addOneBucket, doubleBucketSize);
+  CollidingTable copy(t);
+  copy.insert("a", 1);
+  copy.insert("b", 2);
+  copy.insert("c", 3);
+  BOOST_TEST(copy.bucketCount() == 5);
+  BOOST_TEST(copy.getBucketSize() == 4);
+  BOOST_TEST(t.bucketCount() == 4);
+  BOOST_TEST(t.getBucketSize() == 2);
+}
+
+BOOST_AUTO_TEST_CASE(invalid_rehash_settings_throw)
+{
+  Table t(2, 2);
+  BOOST_CHECK_THROW(t.setRehashPolicy(nullptr, doubleBucketSize), std::invalid_argument);
+  BOOST_CHECK_THROW(t.setRehashPolicy(addOneBucket, nullptr), std::invalid_argument);
+  BOOST_CHECK_THROW(t.setMaxAveragePerBucket(0.0), std::invalid_argument);
+}
