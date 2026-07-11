@@ -2,10 +2,32 @@
 #define HASH_TABLE_HPP
 
 #include <cstddef>
+#include <new>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 namespace gordejchik {
+  namespace detail {
+    template< class T >
+    struct hash_entry_t {
+      typename std::aligned_storage< sizeof(T), alignof(T) >::type storage;
+      bool occupied;
+    };
+
+    template< class T >
+    T* entryValue(hash_entry_t< T >* entry)
+    {
+      return static_cast< T* >(static_cast< void* >(&entry->storage));
+    }
+
+    template< class T >
+    const T* entryValue(const hash_entry_t< T >* entry)
+    {
+      return static_cast< const T* >(static_cast< const void* >(&entry->storage));
+    }
+  }
+
   template< class Key, class Value, class Hash, class Equal >
   class HashTable {
   public:
@@ -48,10 +70,7 @@ namespace gordejchik {
     ConstIterator cend() const;
 
   private:
-    struct Entry {
-      value_type data_;
-      bool occupied_;
-    };
+    using Entry = detail::hash_entry_t< value_type >;
 
     Entry* data_;
     size_t numBuckets_;
@@ -60,11 +79,16 @@ namespace gordejchik {
     Hash hash_;
     Equal equal_;
 
+    static void constructAt(Entry* entry, const Key& key, const Value& value);
+    static void constructAt(Entry* entry, const value_type& value);
+    static void destroyAt(Entry* entry);
+    void destroyAll();
     size_t totalCapacity() const;
     size_t homeStart(const Key& key) const;
     size_t spareStart() const;
     Entry* findEntry(const Key& key);
     const Entry* findEntry(const Key& key) const;
+    Entry* findFreeSlot(const Key& key);
   };
 
   template< class Key, class Value, class Hash, class Equal >
@@ -130,6 +154,7 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   gordejchik::HashTable< Key, Value, Hash, Equal >::~HashTable()
   {
+    destroyAll();
     delete[] data_;
   }
 
@@ -144,8 +169,16 @@ namespace gordejchik {
   {
     const size_t cap = totalCapacity();
     data_ = new Entry[cap]();
-    for (size_t i = 0; i < cap; ++i) {
-      data_[i] = other.data_[i];
+    try {
+      for (size_t i = 0; i < cap; ++i) {
+        if (other.data_[i].occupied) {
+          constructAt(&data_[i], *detail::entryValue(&other.data_[i]));
+        }
+      }
+    } catch (...) {
+      destroyAll();
+      delete[] data_;
+      throw;
     }
   }
 
@@ -166,12 +199,13 @@ namespace gordejchik {
     numBuckets_(other.numBuckets_),
     bucketSize_(other.bucketSize_),
     size_(other.size_),
-    hash_(other.hash_),
-    equal_(other.equal_)
+    hash_(std::move(other.hash_)),
+    equal_(std::move(other.equal_))
   {
     other.data_ = nullptr;
-    other.size_ = 0;
     other.numBuckets_ = 0;
+    other.bucketSize_ = 0;
+    other.size_ = 0;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -179,7 +213,8 @@ namespace gordejchik {
   gordejchik::HashTable< Key, Value, Hash, Equal >::operator=(HashTable&& other)
   {
     if (this != &other) {
-      swap(other);
+      HashTable temp(std::move(other));
+      swap(temp);
     }
     return *this;
   }
@@ -187,21 +222,46 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   void gordejchik::HashTable< Key, Value, Hash, Equal >::swap(HashTable& other)
   {
-    Entry* tmpData = data_;
-    data_ = other.data_;
-    other.data_ = tmpData;
+    std::swap(data_, other.data_);
+    std::swap(numBuckets_, other.numBuckets_);
+    std::swap(bucketSize_, other.bucketSize_);
+    std::swap(size_, other.size_);
+    std::swap(hash_, other.hash_);
+    std::swap(equal_, other.equal_);
+  }
 
-    size_t tmp = numBuckets_;
-    numBuckets_ = other.numBuckets_;
-    other.numBuckets_ = tmp;
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::constructAt(
+      Entry* entry, const Key& key, const Value& value)
+  {
+    ::new (static_cast< void* >(&entry->storage)) value_type(key, value);
+    entry->occupied = true;
+  }
 
-    tmp = bucketSize_;
-    bucketSize_ = other.bucketSize_;
-    other.bucketSize_ = tmp;
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::constructAt(
+      Entry* entry, const value_type& value)
+  {
+    ::new (static_cast< void* >(&entry->storage)) value_type(value);
+    entry->occupied = true;
+  }
 
-    tmp = size_;
-    size_ = other.size_;
-    other.size_ = tmp;
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::destroyAt(Entry* entry)
+  {
+    detail::entryValue(entry)->~value_type();
+    entry->occupied = false;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::destroyAll()
+  {
+    const size_t cap = totalCapacity();
+    for (size_t i = 0; i < cap; ++i) {
+      if (data_[i].occupied) {
+        destroyAt(&data_[i]);
+      }
+    }
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -226,19 +286,8 @@ namespace gordejchik {
   typename gordejchik::HashTable< Key, Value, Hash, Equal >::Entry*
   gordejchik::HashTable< Key, Value, Hash, Equal >::findEntry(const Key& key)
   {
-    const size_t home = homeStart(key);
-    for (size_t i = home; i < home + bucketSize_; ++i) {
-      if (data_[i].occupied_ && equal_(data_[i].data_.first, key)) {
-        return &data_[i];
-      }
-    }
-    const size_t spare = spareStart();
-    for (size_t i = spare; i < spare + bucketSize_; ++i) {
-      if (data_[i].occupied_ && equal_(data_[i].data_.first, key)) {
-        return &data_[i];
-      }
-    }
-    return nullptr;
+    const HashTable& self = *this;
+    return const_cast< Entry* >(self.findEntry(key));
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -247,13 +296,32 @@ namespace gordejchik {
   {
     const size_t home = homeStart(key);
     for (size_t i = home; i < home + bucketSize_; ++i) {
-      if (data_[i].occupied_ && equal_(data_[i].data_.first, key)) {
+      if (data_[i].occupied && equal_(detail::entryValue(&data_[i])->first, key)) {
         return &data_[i];
       }
     }
     const size_t spare = spareStart();
     for (size_t i = spare; i < spare + bucketSize_; ++i) {
-      if (data_[i].occupied_ && equal_(data_[i].data_.first, key)) {
+      if (data_[i].occupied && equal_(detail::entryValue(&data_[i])->first, key)) {
+        return &data_[i];
+      }
+    }
+    return nullptr;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename gordejchik::HashTable< Key, Value, Hash, Equal >::Entry*
+  gordejchik::HashTable< Key, Value, Hash, Equal >::findFreeSlot(const Key& key)
+  {
+    const size_t home = homeStart(key);
+    for (size_t i = home; i < home + bucketSize_; ++i) {
+      if (!data_[i].occupied) {
+        return &data_[i];
+      }
+    }
+    const size_t spare = spareStart();
+    for (size_t i = spare; i < spare + bucketSize_; ++i) {
+      if (!data_[i].occupied) {
         return &data_[i];
       }
     }
@@ -266,28 +334,15 @@ namespace gordejchik {
   {
     Entry* existing = findEntry(key);
     if (existing) {
-      existing->data_.second = value;
+      detail::entryValue(existing)->second = value;
       return;
     }
-    const size_t home = homeStart(key);
-    for (size_t i = home; i < home + bucketSize_; ++i) {
-      if (!data_[i].occupied_) {
-        data_[i].data_ = value_type(key, value);
-        data_[i].occupied_ = true;
-        ++size_;
-        return;
-      }
+    Entry* slot = findFreeSlot(key);
+    if (!slot) {
+      throw std::overflow_error("Hash table overflow");
     }
-    const size_t spare = spareStart();
-    for (size_t i = spare; i < spare + bucketSize_; ++i) {
-      if (!data_[i].occupied_) {
-        data_[i].data_ = value_type(key, value);
-        data_[i].occupied_ = true;
-        ++size_;
-        return;
-      }
-    }
-    throw std::overflow_error("Hash table overflow");
+    constructAt(slot, key, value);
+    ++size_;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -297,7 +352,7 @@ namespace gordejchik {
     if (!entry) {
       throw std::out_of_range("Key not found");
     }
-    return entry->data_.second;
+    return detail::entryValue(entry)->second;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -307,7 +362,7 @@ namespace gordejchik {
     if (!entry) {
       throw std::out_of_range("Key not found");
     }
-    return entry->data_.second;
+    return detail::entryValue(entry)->second;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -315,10 +370,10 @@ namespace gordejchik {
   {
     Entry* entry = findEntry(key);
     if (entry) {
-      return entry->data_.second;
+      return detail::entryValue(entry)->second;
     }
     insert(key, Value());
-    return findEntry(key)->data_.second;
+    return detail::entryValue(findEntry(key))->second;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -334,8 +389,7 @@ namespace gordejchik {
     if (!entry) {
       throw std::out_of_range("Key not found in erase");
     }
-    entry->data_ = value_type();
-    entry->occupied_ = false;
+    destroyAt(entry);
     --size_;
   }
 
@@ -366,12 +420,7 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   void gordejchik::HashTable< Key, Value, Hash, Equal >::clear()
   {
-    for (size_t i = 0; i < totalCapacity(); ++i) {
-      if (data_[i].occupied_) {
-        data_[i].data_ = value_type();
-        data_[i].occupied_ = false;
-      }
-    }
+    destroyAll();
     size_ = 0;
   }
 
@@ -379,9 +428,11 @@ namespace gordejchik {
   void gordejchik::HashTable< Key, Value, Hash, Equal >::rehash(size_t newBucketCount)
   {
     HashTable temp(newBucketCount, bucketSize_, hash_, equal_);
-    for (size_t i = 0; i < totalCapacity(); ++i) {
-      if (data_[i].occupied_) {
-        temp.insert(data_[i].data_.first, data_[i].data_.second);
+    const size_t cap = totalCapacity();
+    for (size_t i = 0; i < cap; ++i) {
+      if (data_[i].occupied) {
+        const value_type& value = *detail::entryValue(&data_[i]);
+        temp.insert(value.first, value.second);
       }
     }
     swap(temp);
@@ -397,7 +448,7 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   void gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::skipEmpty()
   {
-    while (current_ != end_ && !current_->occupied_) {
+    while (current_ != end_ && !current_->occupied) {
       ++current_;
     }
   }
@@ -406,14 +457,14 @@ namespace gordejchik {
   typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type&
   gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator*()
   {
-    return current_->data_;
+    return *detail::entryValue(current_);
   }
 
   template< class Key, class Value, class Hash, class Equal >
   typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type*
   gordejchik::HashTable< Key, Value, Hash, Equal >::Iterator::operator->()
   {
-    return &current_->data_;
+    return detail::entryValue(current_);
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -465,7 +516,7 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   void gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::skipEmpty()
   {
-    while (current_ != end_ && !current_->occupied_) {
+    while (current_ != end_ && !current_->occupied) {
       ++current_;
     }
   }
@@ -474,14 +525,14 @@ namespace gordejchik {
   const typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type&
   gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator*() const
   {
-    return current_->data_;
+    return *detail::entryValue(current_);
   }
 
   template< class Key, class Value, class Hash, class Equal >
   const typename gordejchik::HashTable< Key, Value, Hash, Equal >::value_type*
   gordejchik::HashTable< Key, Value, Hash, Equal >::ConstIterator::operator->() const
   {
-    return &current_->data_;
+    return detail::entryValue(current_);
   }
 
   template< class Key, class Value, class Hash, class Equal >
