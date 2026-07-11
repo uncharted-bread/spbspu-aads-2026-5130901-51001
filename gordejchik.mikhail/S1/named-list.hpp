@@ -8,11 +8,6 @@ namespace gordejchik {
   struct NamedList {
     std::string name;
     List< size_t > nums;
-
-    explicit NamedList(const std::string& n):
-      name(n),
-      nums()
-    {}
   };
 }
 

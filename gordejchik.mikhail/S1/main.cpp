@@ -10,7 +10,7 @@ namespace gordejchik {
   {
     std::string name;
     while (std::cin >> name) {
-      NamedList namedList(name);
+      NamedList namedList{name, {}};
       if (std::cin.eof()) {
         namedLists.pushBack(static_cast< NamedList&& >(namedList));
         break;
