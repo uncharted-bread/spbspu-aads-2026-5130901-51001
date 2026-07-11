@@ -1,8 +1,9 @@
 #include "commands.hpp"
-#include "safe-insert.hpp"
-#include <iostream>
 #include <algorithm>
+#include <cstddef>
+#include <ostream>
 #include <string>
+#include "safe-insert.hpp"
 
 static std::string extractWord(const std::string& line, size_t& pos)
 {

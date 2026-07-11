@@ -123,3 +123,16 @@ size_t gordejchik::Sha1Hash< std::pair< std::string, std::string > >::operator()
   const uint8_t* ptr = reinterpret_cast< const uint8_t* >(combined.data());
   return digestToSizeT(computeSha1(ptr, combined.size()));
 }
+
+bool gordejchik::StringEqual::operator()(const std::string& a,
+    const std::string& b) const
+{
+  return a == b;
+}
+
+bool gordejchik::PairStringEqual::operator()(
+    const std::pair< std::string, std::string >& a,
+    const std::pair< std::string, std::string >& b) const
+{
+  return a.first == b.first && a.second == b.second;
+}

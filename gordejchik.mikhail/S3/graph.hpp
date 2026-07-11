@@ -1,5 +1,5 @@
-#ifndef GRAPH_HPP
-#define GRAPH_HPP
+#ifndef GORDEJCHIK_GRAPH_HPP
+#define GORDEJCHIK_GRAPH_HPP
 
 #include <cstddef>
 #include <string>

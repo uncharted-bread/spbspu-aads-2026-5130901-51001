@@ -1,8 +1,9 @@
 #define BOOST_TEST_MODULE HashTableTests
+#include <stdexcept>
+#include <utility>
 #include <boost/test/included/unit_test.hpp>
 #include "hash-table.hpp"
 #include "sha1.hpp"
-#include <stdexcept>
 
 using Table = gordejchik::HashTable< std::string, int,
     gordejchik::Sha1Hash< std::string >, gordejchik::StringEqual >;
@@ -82,7 +83,7 @@ BOOST_AUTO_TEST_CASE(copy_and_move)
   t2.insert("k1", 99);
   BOOST_TEST(t1.at("k1") == 10);
 
-  Table t3(static_cast< Table&& >(t1));
+  Table t3(std::move(t1));
   BOOST_TEST(t3.at("k2") == 20);
   BOOST_TEST(t3.size() == 2);
 }

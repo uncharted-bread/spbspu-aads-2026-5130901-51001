@@ -1,5 +1,5 @@
-#ifndef HASH_TABLE_HPP
-#define HASH_TABLE_HPP
+#ifndef GORDEJCHIK_HASH_TABLE_HPP
+#define GORDEJCHIK_HASH_TABLE_HPP
 
 #include <cstddef>
 #include <new>
