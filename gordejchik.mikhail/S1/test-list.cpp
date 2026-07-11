@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(pushBackAndIterate)
   BOOST_TEST(lst.front() == 1);
   BOOST_TEST(lst.back() == 3);
 
-  auto it = lst.begin();
+  List< int >::iterator it = lst.begin();
   BOOST_TEST(*it == 1);
   ++it;
   BOOST_TEST(*it == 2);
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(pushFrontAndIterate)
   BOOST_TEST(lst.front() == 1);
   BOOST_TEST(lst.back() == 3);
 
-  auto it = lst.begin();
+  List< int >::iterator it = lst.begin();
   BOOST_TEST(*it == 1);
   ++it;
   BOOST_TEST(*it == 2);
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(bidirectionalIteration)
   lst.pushBack(2);
   lst.pushBack(3);
 
-  auto it = lst.begin();
+  List< int >::iterator it = lst.begin();
   ++it;
   ++it;
   BOOST_TEST(*it == 3);
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(reverseFromEnd)
   lst.pushBack(2);
   lst.pushBack(3);
 
-  auto it = lst.end();
+  List< int >::iterator it = lst.end();
   --it;
   BOOST_TEST(*it == 3);
   --it;
@@ -133,12 +133,12 @@ BOOST_AUTO_TEST_CASE(postfixOperators)
   lst.pushBack(7);
   lst.pushBack(8);
 
-  auto it = lst.begin();
-  auto prev = it++;
+  List< int >::iterator it = lst.begin();
+  List< int >::iterator prev = it++;
   BOOST_TEST(*prev == 7);
   BOOST_TEST(*it == 8);
 
-  auto prev2 = it--;
+  List< int >::iterator prev2 = it--;
   BOOST_TEST(*prev2 == 8);
   BOOST_TEST(*it == 7);
 }
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(constIterator)
   lst.pushBack(6);
 
   const List< int >& cref = lst;
-  auto it = cref.cbegin();
+  List< int >::const_iterator it = cref.cbegin();
   BOOST_TEST(*it == 5);
   ++it;
   BOOST_TEST(*it == 6);
@@ -234,12 +234,12 @@ BOOST_AUTO_TEST_CASE(insertMiddle)
   lst.pushBack(1);
   lst.pushBack(3);
 
-  auto it = lst.cbegin();
+  List< int >::const_iterator it = lst.cbegin();
   ++it;
   lst.insert(it, 2);
 
   BOOST_TEST(lst.size() == 3u);
-  auto cur = lst.begin();
+  List< int >::iterator cur = lst.begin();
   BOOST_TEST(*cur == 1);
   ++cur;
   BOOST_TEST(*cur == 2);
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(erase)
   lst.pushBack(2);
   lst.pushBack(3);
 
-  auto it = lst.begin();
+  List< int >::iterator it = lst.begin();
   ++it;
   it = lst.erase(it);
 

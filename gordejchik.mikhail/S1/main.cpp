@@ -26,8 +26,9 @@ namespace gordejchik {
 
   static void printNames(const List< NamedList >& namedLists)
   {
+    using NamedCIter = List< NamedList >::const_iterator;
     bool first = true;
-    for (auto it = namedLists.cbegin(); it != namedLists.cend(); ++it) {
+    for (NamedCIter it = namedLists.cbegin(); it != namedLists.cend(); ++it) {
       if (!first) {
         std::cout << ' ';
       }
@@ -48,15 +49,18 @@ namespace gordejchik {
 
   static void processZip(List< NamedList >& namedLists, List< size_t >& rowSums)
   {
-    List< LIter< size_t > > iters;
-    for (auto it = namedLists.begin(); it != namedLists.end(); ++it) {
+    using NumIter = List< size_t >::iterator;
+    using NumCIter = List< size_t >::const_iterator;
+    using NamedIter = List< NamedList >::iterator;
+    List< NumIter > iters;
+    for (NamedIter it = namedLists.begin(); it != namedLists.end(); ++it) {
       iters.pushBack(it->nums.begin());
     }
     while (true) {
       bool rowHasData = false;
       List< size_t > rowVals;
-      auto iterIt = iters.begin();
-      auto namedListIt = namedLists.begin();
+      List< NumIter >::iterator iterIt = iters.begin();
+      NamedIter namedListIt = namedLists.begin();
       while (namedListIt != namedLists.end()) {
         if (*iterIt != namedListIt->nums.end()) {
           rowVals.pushBack(**iterIt);
@@ -70,7 +74,7 @@ namespace gordejchik {
         break;
       }
       bool firstInRow = true;
-      for (auto it = rowVals.cbegin(); it != rowVals.cend(); ++it) {
+      for (NumCIter it = rowVals.cbegin(); it != rowVals.cend(); ++it) {
         if (!firstInRow) {
           std::cout << ' ';
         }
@@ -79,7 +83,7 @@ namespace gordejchik {
       }
       std::cout << '\n';
       size_t rowSum = 0;
-      for (auto it = rowVals.cbegin(); it != rowVals.cend(); ++it) {
+      for (NumCIter it = rowVals.cbegin(); it != rowVals.cend(); ++it) {
         rowSum = checkedSum(rowSum, *it);
       }
       rowSums.pushBack(rowSum);
@@ -92,8 +96,9 @@ namespace gordejchik {
       std::cout << 0 << '\n';
       return;
     }
+    using NumCIter = List< size_t >::const_iterator;
     bool first = true;
-    for (auto it = sums.cbegin(); it != sums.cend(); ++it) {
+    for (NumCIter it = sums.cbegin(); it != sums.cend(); ++it) {
       if (!first) {
         std::cout << ' ';
       }

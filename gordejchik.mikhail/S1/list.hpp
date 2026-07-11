@@ -70,7 +70,7 @@ namespace gordejchik {
     size_(0)
   {
     try {
-      for (auto it = other.cbegin(); it != other.cend(); ++it) {
+      for (const_iterator it = other.cbegin(); it != other.cend(); ++it) {
         pushBack(*it);
       }
     } catch (...) {
