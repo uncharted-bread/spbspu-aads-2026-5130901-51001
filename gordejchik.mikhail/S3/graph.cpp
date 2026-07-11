@@ -1,25 +1,15 @@
 #include "graph.hpp"
 #include <fstream>
 #include <stdexcept>
+#include "safe-insert.hpp"
 
-template< class K, class V, class H, class E >
-static void safeInsert(gordejchik::HashTable< K, V, H, E >& table,
-    const K& key, const V& val)
-{
-  for (size_t attempt = 0; attempt < 5; ++attempt) {
-    try {
-      table.insert(key, val);
-      return;
-    } catch (const std::overflow_error&) {
-      table.rehash(table.bucketCount() * 2);
-    }
-  }
-  table.insert(key, val);
-}
+static const size_t initialVertexBuckets = 8;
+static const size_t initialEdgeBuckets = 16;
+static const size_t initialBucketSize = 4;
 
 gordejchik::Graph::Graph():
-  vertices_(8, 4),
-  edges_(16, 4)
+  vertices_(initialVertexBuckets, initialBucketSize),
+  edges_(initialEdgeBuckets, initialBucketSize)
 {}
 
 void gordejchik::Graph::addVertex(const std::string& name)
@@ -27,7 +17,7 @@ void gordejchik::Graph::addVertex(const std::string& name)
   if (vertices_.contains(name)) {
     return;
   }
-  safeInsert(vertices_, name, 'v');
+  detail::safeInsert(vertices_, name, 'v');
 }
 
 bool gordejchik::Graph::hasVertex(const std::string& name) const
@@ -46,7 +36,7 @@ void gordejchik::Graph::addEdge(const std::string& from,
   } else {
     WeightList wl;
     wl.pushBack(weight);
-    safeInsert(edges_, key, wl);
+    detail::safeInsert(edges_, key, wl);
   }
 }
 
@@ -57,23 +47,20 @@ bool gordejchik::Graph::removeEdge(const std::string& from,
   if (!edges_.contains(key)) {
     return false;
   }
-  WeightList& wl = edges_.at(key);
-  WeightList newList;
+  WeightList& weights = edges_.at(key);
   bool removed = false;
-  for (LCIter< size_t > it = wl.cbegin(); it != wl.cend(); ++it) {
-    if (!removed && *it == weight) {
+  for (WeightList::iterator it = weights.begin(); it != weights.end(); ++it) {
+    if (*it == weight) {
+      weights.erase(it);
       removed = true;
-    } else {
-      newList.pushBack(*it);
+      break;
     }
   }
   if (!removed) {
     return false;
   }
-  if (newList.empty()) {
+  if (weights.empty()) {
     edges_.erase(key);
-  } else {
-    wl = newList;
   }
   return true;
 }
@@ -103,7 +90,7 @@ void gordejchik::readGraphs(const std::string& filename,
 {
   std::ifstream file(filename);
   if (!file) {
-    throw std::runtime_error("Не получается открыть файл: " + filename);
+    throw std::runtime_error("Cannot open file: " + filename);
   }
   std::string graphName;
   size_t edgeCount = 0;
@@ -119,6 +106,6 @@ void gordejchik::readGraphs(const std::string& filename,
       g.addEdge(from, to, weight);
       ++i;
     }
-    safeInsert(graphs, graphName, g);
+    detail::safeInsert(graphs, graphName, g);
   }
 }

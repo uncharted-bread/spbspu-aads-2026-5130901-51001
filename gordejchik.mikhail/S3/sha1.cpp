@@ -58,7 +58,7 @@ static void processBlock(const uint8_t block[64], uint32_t h[5])
 static size_t digestToSizeT(const gordejchik::sha1_digest_t& digest)
 {
   size_t result = 0;
-  for (size_t i = 0; i < sizeof(size_t) && i < 20; ++i) {
+  for (size_t i = 0; i < sizeof(size_t) && i < sizeof(digest.bytes); ++i) {
     result = (result << 8) | digest.bytes[i];
   }
   return result;
@@ -122,4 +122,17 @@ size_t gordejchik::Sha1Hash< std::pair< std::string, std::string > >::operator()
   combined += key.second;
   const uint8_t* ptr = reinterpret_cast< const uint8_t* >(combined.data());
   return digestToSizeT(computeSha1(ptr, combined.size()));
+}
+
+bool gordejchik::StringEqual::operator()(const std::string& a,
+    const std::string& b) const
+{
+  return a == b;
+}
+
+bool gordejchik::PairStringEqual::operator()(
+    const std::pair< std::string, std::string >& a,
+    const std::pair< std::string, std::string >& b) const
+{
+  return a.first == b.first && a.second == b.second;
 }

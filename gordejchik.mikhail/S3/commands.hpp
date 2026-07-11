@@ -1,5 +1,5 @@
-#ifndef COMMANDS_HPP
-#define COMMANDS_HPP
+#ifndef GORDEJCHIK_COMMANDS_HPP
+#define GORDEJCHIK_COMMANDS_HPP
 
 #include <iosfwd>
 #include <string>

@@ -1,5 +1,5 @@
-#ifndef CALC_HPP
-#define CALC_HPP
+#ifndef GORDEJCHIK_CALC_HPP
+#define GORDEJCHIK_CALC_HPP
 
 #include <string>
 
