@@ -8,6 +8,18 @@ using gordejchik::List;
 using gordejchik::LIter;
 using gordejchik::LCIter;
 
+static std::string toStr(const List< int >& lst)
+{
+  std::string result;
+  for (List< int >::const_iterator it = lst.cbegin(); it != lst.cend(); ++it) {
+    if (!result.empty()) {
+      result += ' ';
+    }
+    result += std::to_string(*it);
+  }
+  return result;
+}
+
 BOOST_AUTO_TEST_SUITE(ListSuite)
 
 BOOST_AUTO_TEST_CASE(emptyList)
@@ -344,6 +356,114 @@ BOOST_AUTO_TEST_CASE(swapWithEmpty)
   BOOST_TEST(b.size() == 2u);
   BOOST_TEST(b.front() == 1);
   BOOST_TEST(b.back() == 2);
+}
+
+BOOST_AUTO_TEST_CASE(spliceWholeList)
+{
+  List< int > a;
+  a.pushBack(1);
+  a.pushBack(4);
+  List< int > b;
+  b.pushBack(2);
+  b.pushBack(3);
+
+  List< int >::const_iterator pos = a.cbegin();
+  ++pos;
+  a.splice(pos, b);
+
+  BOOST_TEST(toStr(a) == "1 2 3 4");
+  BOOST_TEST(a.size() == 4u);
+  BOOST_TEST(b.empty());
+}
+
+BOOST_AUTO_TEST_CASE(spliceEmptySource)
+{
+  List< int > a;
+  a.pushBack(1);
+  List< int > b;
+
+  a.splice(a.cend(), b);
+
+  BOOST_TEST(toStr(a) == "1");
+  BOOST_TEST(a.size() == 1u);
+  BOOST_TEST(b.empty());
+}
+
+BOOST_AUTO_TEST_CASE(spliceSingleElement)
+{
+  List< int > a;
+  a.pushBack(1);
+  a.pushBack(3);
+  List< int > b;
+  b.pushBack(2);
+  b.pushBack(9);
+
+  List< int >::const_iterator pos = a.cbegin();
+  ++pos;
+  a.splice(pos, b, b.cbegin());
+
+  BOOST_TEST(toStr(a) == "1 2 3");
+  BOOST_TEST(toStr(b) == "9");
+  BOOST_TEST(a.size() == 3u);
+  BOOST_TEST(b.size() == 1u);
+}
+
+BOOST_AUTO_TEST_CASE(spliceSingleNoEffect)
+{
+  List< int > a;
+  a.pushBack(1);
+  a.pushBack(2);
+
+  a.splice(a.cbegin(), a, a.cbegin());
+  BOOST_TEST(toStr(a) == "1 2");
+
+  List< int >::const_iterator second = a.cbegin();
+  ++second;
+  a.splice(second, a, a.cbegin());
+  BOOST_TEST(toStr(a) == "1 2");
+  BOOST_TEST(a.size() == 2u);
+}
+
+BOOST_AUTO_TEST_CASE(spliceRange)
+{
+  List< int > a;
+  a.pushBack(1);
+  a.pushBack(5);
+  List< int > b;
+  b.pushBack(2);
+  b.pushBack(3);
+  b.pushBack(4);
+  b.pushBack(9);
+
+  List< int >::const_iterator pos = a.cbegin();
+  ++pos;
+  List< int >::const_iterator last = b.cbegin();
+  ++last;
+  ++last;
+  ++last;
+  a.splice(pos, b, b.cbegin(), last);
+
+  BOOST_TEST(toStr(a) == "1 2 3 4 5");
+  BOOST_TEST(toStr(b) == "9");
+  BOOST_TEST(a.size() == 5u);
+  BOOST_TEST(b.size() == 1u);
+}
+
+BOOST_AUTO_TEST_CASE(spliceRangeInsideSameList)
+{
+  List< int > a;
+  a.pushBack(3);
+  a.pushBack(4);
+  a.pushBack(1);
+  a.pushBack(2);
+
+  List< int >::const_iterator first = a.cbegin();
+  ++first;
+  ++first;
+  a.splice(a.cbegin(), a, first, a.cend());
+
+  BOOST_TEST(toStr(a) == "1 2 3 4");
+  BOOST_TEST(a.size() == 4u);
 }
 
 BOOST_AUTO_TEST_CASE(stringList)
