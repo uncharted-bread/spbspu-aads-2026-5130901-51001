@@ -21,6 +21,11 @@ static std::string toStr(const List< int >& lst)
   return result;
 }
 
+static bool isEven(int value)
+{
+  return value % 2 == 0;
+}
+
 BOOST_AUTO_TEST_SUITE(ListSuite)
 
 BOOST_AUTO_TEST_CASE(emptyList)
@@ -597,6 +602,54 @@ BOOST_AUTO_TEST_CASE(sortStrings)
   BOOST_TEST(lst.front() == "apple");
   BOOST_TEST(lst.back() == "pear");
   BOOST_TEST(lst.size() == 3u);
+}
+
+BOOST_AUTO_TEST_CASE(partitionEvenOdd)
+{
+  List< int > lst;
+  for (int i = 1; i <= 6; ++i) {
+    lst.pushBack(i);
+  }
+
+  List< int >::iterator bound = lst.partition(isEven);
+
+  BOOST_TEST(toStr(lst) == "2 4 6 1 3 5");
+  BOOST_TEST(lst.size() == 6u);
+  BOOST_TEST(*bound == 1);
+}
+
+BOOST_AUTO_TEST_CASE(partitionAllMatch)
+{
+  List< int > lst;
+  lst.pushBack(2);
+  lst.pushBack(4);
+
+  List< int >::iterator bound = lst.partition(isEven);
+
+  BOOST_TEST(toStr(lst) == "2 4");
+  BOOST_CHECK(bound == lst.end());
+}
+
+BOOST_AUTO_TEST_CASE(partitionNoneMatch)
+{
+  List< int > lst;
+  lst.pushBack(1);
+  lst.pushBack(3);
+
+  List< int >::iterator bound = lst.partition(isEven);
+
+  BOOST_TEST(toStr(lst) == "1 3");
+  BOOST_CHECK(bound == lst.begin());
+}
+
+BOOST_AUTO_TEST_CASE(partitionEmpty)
+{
+  List< int > lst;
+
+  List< int >::iterator bound = lst.partition(isEven);
+
+  BOOST_TEST(lst.empty());
+  BOOST_CHECK(bound == lst.end());
 }
 
 BOOST_AUTO_TEST_CASE(stringList)
