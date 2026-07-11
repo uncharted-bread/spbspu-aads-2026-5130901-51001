@@ -15,15 +15,6 @@ static std::string extractWord(const std::string& line, size_t& pos)
   return line.substr(start, pos - start);
 }
 
-static size_t extractUnsigned(const std::string& line, size_t& pos)
-{
-  std::string word = extractWord(line, pos);
-  if (word.empty()) {
-    throw std::invalid_argument("Expected number");
-  }
-  return std::stoul(word);
-}
-
 static void printInvalid(std::ostream& out)
 {
   out << "<INVALID COMMAND>\n";
