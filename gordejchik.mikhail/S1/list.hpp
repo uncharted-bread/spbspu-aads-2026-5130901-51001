@@ -48,9 +48,15 @@ namespace gordejchik {
     void clear() noexcept;
     void swap(List& other) noexcept;
 
+    void splice(const_iterator pos, List& other) noexcept;
+    void splice(const_iterator pos, List& other, const_iterator it) noexcept;
+    void splice(const_iterator pos, List& other, const_iterator first, const_iterator last) noexcept;
+
   private:
     using BaseNode = detail::BaseNode;
     using Node = detail::Node< T >;
+
+    static void relink(BaseNode* pos, BaseNode* first, BaseNode* last) noexcept;
 
     void insertBefore(BaseNode* pos, Node* node) noexcept;
 
@@ -290,6 +296,57 @@ namespace gordejchik {
       other.fake_.next->prev = &other.fake_;
       other.fake_.prev->next = &other.fake_;
     }
+  }
+
+  template< class T >
+  void List< T >::relink(BaseNode* pos, BaseNode* first, BaseNode* last) noexcept
+  {
+    first->prev->next = last->next;
+    last->next->prev = first->prev;
+    first->prev = pos->prev;
+    last->next = pos;
+    pos->prev->next = first;
+    pos->prev = last;
+  }
+
+  template< class T >
+  void List< T >::splice(const_iterator pos, List& other) noexcept
+  {
+    if (other.empty()) {
+      return;
+    }
+    relink(const_cast< BaseNode* >(pos.node_), other.fake_.next, other.fake_.prev);
+    size_ += other.size_;
+    other.size_ = 0;
+  }
+
+  template< class T >
+  void List< T >::splice(const_iterator pos, List& other, const_iterator it) noexcept
+  {
+    BaseNode* node = const_cast< BaseNode* >(it.node_);
+    if (pos.node_ == node || pos.node_ == node->next) {
+      return;
+    }
+    relink(const_cast< BaseNode* >(pos.node_), node, node);
+    --other.size_;
+    ++size_;
+  }
+
+  template< class T >
+  void List< T >::splice(const_iterator pos, List& other, const_iterator first, const_iterator last) noexcept
+  {
+    if (first == last) {
+      return;
+    }
+    size_t count = 0;
+    for (const_iterator it = first; it != last; ++it) {
+      ++count;
+    }
+    BaseNode* firstNode = const_cast< BaseNode* >(first.node_);
+    BaseNode* lastNode = const_cast< BaseNode* >(last.node_)->prev;
+    relink(const_cast< BaseNode* >(pos.node_), firstNode, lastNode);
+    other.size_ -= count;
+    size_ += count;
   }
 }
 
