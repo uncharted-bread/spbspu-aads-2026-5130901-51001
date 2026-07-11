@@ -60,7 +60,14 @@ namespace gordejchik {
     size_t getBucketSize() const;
     void clear();
     void rehash(size_t newBucketCount);
+    void rehash(size_t newBucketCount, size_t newBucketSize);
     void swap(HashTable& other);
+
+    size_t spareSize() const;
+    double averagePerBucket() const;
+    void setMaxSpareSize(size_t limit);
+    void setMaxAveragePerBucket(double limit);
+    void setRehashPolicy(size_t (*updBuckets)(size_t), size_t (*updBucketSize)(size_t));
 
     Iterator begin();
     Iterator end();
@@ -78,7 +85,17 @@ namespace gordejchik {
     size_t size_;
     Hash hash_;
     Equal equal_;
+    size_t maxSpareSize_;
+    double maxAveragePerBucket_;
+    bool spareLimitSet_;
+    bool averageLimitSet_;
+    size_t (*updBuckets_)(size_t);
+    size_t (*updBucketSize_)(size_t);
 
+    static size_t growBucketCount(size_t count);
+    static size_t keepBucketSize(size_t size);
+    bool limitsExceeded() const;
+    void copySettings(const HashTable& other);
     static void constructAt(Entry* entry, const Key& key, const Value& value);
     static void constructAt(Entry* entry, const value_type& value);
     static void destroyAt(Entry* entry);
@@ -143,7 +160,13 @@ namespace gordejchik {
     bucketSize_(bucketSize),
     size_(0),
     hash_(hash),
-    equal_(equal)
+    equal_(equal),
+    maxSpareSize_(0),
+    maxAveragePerBucket_(0.0),
+    spareLimitSet_(false),
+    averageLimitSet_(false),
+    updBuckets_(growBucketCount),
+    updBucketSize_(keepBucketSize)
   {
     if (numBuckets_ == 0 || bucketSize_ == 0) {
       throw std::invalid_argument("Bucket count and size must be positive");
@@ -165,7 +188,13 @@ namespace gordejchik {
     bucketSize_(other.bucketSize_),
     size_(other.size_),
     hash_(other.hash_),
-    equal_(other.equal_)
+    equal_(other.equal_),
+    maxSpareSize_(other.maxSpareSize_),
+    maxAveragePerBucket_(other.maxAveragePerBucket_),
+    spareLimitSet_(other.spareLimitSet_),
+    averageLimitSet_(other.averageLimitSet_),
+    updBuckets_(other.updBuckets_),
+    updBucketSize_(other.updBucketSize_)
   {
     const size_t cap = totalCapacity();
     data_ = new Entry[cap]();
@@ -200,7 +229,13 @@ namespace gordejchik {
     bucketSize_(other.bucketSize_),
     size_(other.size_),
     hash_(std::move(other.hash_)),
-    equal_(std::move(other.equal_))
+    equal_(std::move(other.equal_)),
+    maxSpareSize_(other.maxSpareSize_),
+    maxAveragePerBucket_(other.maxAveragePerBucket_),
+    spareLimitSet_(other.spareLimitSet_),
+    averageLimitSet_(other.averageLimitSet_),
+    updBuckets_(other.updBuckets_),
+    updBucketSize_(other.updBucketSize_)
   {
     other.data_ = nullptr;
     other.numBuckets_ = 0;
@@ -228,6 +263,92 @@ namespace gordejchik {
     std::swap(size_, other.size_);
     std::swap(hash_, other.hash_);
     std::swap(equal_, other.equal_);
+    std::swap(maxSpareSize_, other.maxSpareSize_);
+    std::swap(maxAveragePerBucket_, other.maxAveragePerBucket_);
+    std::swap(spareLimitSet_, other.spareLimitSet_);
+    std::swap(averageLimitSet_, other.averageLimitSet_);
+    std::swap(updBuckets_, other.updBuckets_);
+    std::swap(updBucketSize_, other.updBucketSize_);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  size_t gordejchik::HashTable< Key, Value, Hash, Equal >::growBucketCount(size_t count)
+  {
+    const size_t growthFactor = 2;
+    return count * growthFactor;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  size_t gordejchik::HashTable< Key, Value, Hash, Equal >::keepBucketSize(size_t size)
+  {
+    return size;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  bool gordejchik::HashTable< Key, Value, Hash, Equal >::limitsExceeded() const
+  {
+    if (spareLimitSet_ && spareSize() > maxSpareSize_) {
+      return true;
+    }
+    return averageLimitSet_ && averagePerBucket() > maxAveragePerBucket_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::copySettings(const HashTable& other)
+  {
+    maxSpareSize_ = other.maxSpareSize_;
+    maxAveragePerBucket_ = other.maxAveragePerBucket_;
+    spareLimitSet_ = other.spareLimitSet_;
+    averageLimitSet_ = other.averageLimitSet_;
+    updBuckets_ = other.updBuckets_;
+    updBucketSize_ = other.updBucketSize_;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  size_t gordejchik::HashTable< Key, Value, Hash, Equal >::spareSize() const
+  {
+    size_t count = 0;
+    const size_t spare = spareStart();
+    for (size_t i = spare; i < spare + bucketSize_; ++i) {
+      if (data_[i].occupied) {
+        ++count;
+      }
+    }
+    return count;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  double gordejchik::HashTable< Key, Value, Hash, Equal >::averagePerBucket() const
+  {
+    return static_cast< double >(size_) / static_cast< double >(numBuckets_);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::setMaxSpareSize(size_t limit)
+  {
+    maxSpareSize_ = limit;
+    spareLimitSet_ = true;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::setMaxAveragePerBucket(double limit)
+  {
+    if (limit <= 0.0) {
+      throw std::invalid_argument("Average limit must be positive");
+    }
+    maxAveragePerBucket_ = limit;
+    averageLimitSet_ = true;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::setRehashPolicy(
+      size_t (*updBuckets)(size_t), size_t (*updBucketSize)(size_t))
+  {
+    if (!updBuckets || !updBucketSize) {
+      throw std::invalid_argument("Rehash policy must not be null");
+    }
+    updBuckets_ = updBuckets;
+    updBucketSize_ = updBucketSize;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -343,6 +464,9 @@ namespace gordejchik {
     }
     constructAt(slot, key, value);
     ++size_;
+    if (limitsExceeded()) {
+      rehash(updBuckets_(numBuckets_), updBucketSize_(bucketSize_));
+    }
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -427,7 +551,14 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   void gordejchik::HashTable< Key, Value, Hash, Equal >::rehash(size_t newBucketCount)
   {
-    HashTable temp(newBucketCount, bucketSize_, hash_, equal_);
+    rehash(newBucketCount, bucketSize_);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  void gordejchik::HashTable< Key, Value, Hash, Equal >::rehash(
+      size_t newBucketCount, size_t newBucketSize)
+  {
+    HashTable temp(newBucketCount, newBucketSize, hash_, equal_);
     const size_t cap = totalCapacity();
     for (size_t i = 0; i < cap; ++i) {
       if (data_[i].occupied) {
@@ -435,6 +566,7 @@ namespace gordejchik {
         temp.insert(value.first, value.second);
       }
     }
+    temp.copySettings(*this);
     swap(temp);
   }
 
