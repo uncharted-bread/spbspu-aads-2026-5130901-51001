@@ -1,8 +1,9 @@
 #include "calc.hpp"
-#include <string>
+#include <limits>
 #include <stdexcept>
-#include "stack.hpp"
+#include <string>
 #include "queue.hpp"
+#include "stack.hpp"
 
 static bool isBinaryOp(const std::string& token)
 {
@@ -68,7 +69,7 @@ static gordejchik::Queue< std::string > tokenize(const std::string& line)
     if (i >= line.size()) {
       break;
     }
-    size_t start = i;
+    const size_t start = i;
     while ((i < line.size()) && (line[i] != ' ')) {
       ++i;
     }
@@ -77,7 +78,7 @@ static gordejchik::Queue< std::string > tokenize(const std::string& line)
   return tokens;
 }
 
-static gordejchik::Queue< std::string > infixToPostfix(
+static gordejchik::Queue< std::string > convertToPostfix(
     gordejchik::Queue< std::string >& input)
 {
   gordejchik::Queue< std::string > output;
@@ -112,17 +113,17 @@ static gordejchik::Queue< std::string > infixToPostfix(
         ops.pop();
       }
       if (ops.empty()) {
-        throw std::invalid_argument("Несовпадающие скобки");
+        throw std::invalid_argument("Mismatched parentheses");
       }
       ops.pop();
     } else {
-      throw std::invalid_argument("Неизвестный токен: " + token);
+      throw std::invalid_argument("Unknown token: " + token);
     }
   }
 
   while (!ops.empty()) {
     if (ops.top() == "(") {
-      throw std::invalid_argument("Несовпадающие скобки");
+      throw std::invalid_argument("Mismatched parentheses");
     }
     output.push(ops.top());
     ops.pop();
@@ -131,31 +132,93 @@ static gordejchik::Queue< std::string > infixToPostfix(
   return output;
 }
 
+static long long addChecked(long long left, long long right)
+{
+  const long long max = std::numeric_limits< long long >::max();
+  const long long min = std::numeric_limits< long long >::min();
+  if ((right > 0) && (left > max - right)) {
+    throw std::overflow_error("Addition overflow");
+  }
+  if ((right < 0) && (left < min - right)) {
+    throw std::overflow_error("Addition overflow");
+  }
+  return left + right;
+}
+
+static long long subtractChecked(long long left, long long right)
+{
+  const long long max = std::numeric_limits< long long >::max();
+  const long long min = std::numeric_limits< long long >::min();
+  if ((right > 0) && (left < min + right)) {
+    throw std::overflow_error("Subtraction overflow");
+  }
+  if ((right < 0) && (left > max + right)) {
+    throw std::overflow_error("Subtraction overflow");
+  }
+  return left - right;
+}
+
+static long long multiplyChecked(long long left, long long right)
+{
+  const long long max = std::numeric_limits< long long >::max();
+  const long long min = std::numeric_limits< long long >::min();
+  if ((left > 0) && (right > 0) && (left > max / right)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  if ((left > 0) && (right < 0) && (right < min / left)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  if ((left < 0) && (right > 0) && (left < min / right)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  if ((left < 0) && (right < 0) && (left < max / right)) {
+    throw std::overflow_error("Multiplication overflow");
+  }
+  return left * right;
+}
+
+static long long divideChecked(long long left, long long right)
+{
+  const long long min = std::numeric_limits< long long >::min();
+  if (right == 0) {
+    throw std::invalid_argument("Division by zero");
+  }
+  if ((left == min) && (right == -1)) {
+    throw std::overflow_error("Division overflow");
+  }
+  return left / right;
+}
+
+static long long moduloChecked(long long left, long long right)
+{
+  if (right == 0) {
+    throw std::invalid_argument("Modulo by zero");
+  }
+  if (right == -1) {
+    return 0;
+  }
+  return left % right;
+}
+
 static long long applyBinary(long long left, long long right,
     const std::string& op)
 {
   if (op == "+") {
-    return left + right;
+    return addChecked(left, right);
   }
   if (op == "-") {
-    return left - right;
+    return subtractChecked(left, right);
   }
   if (op == "*") {
-    return left * right;
+    return multiplyChecked(left, right);
   }
   if (op == "/") {
-    if (right == 0) {
-      throw std::invalid_argument("Деление на 0");
-    }
-    return left / right;
+    return divideChecked(left, right);
   }
   if (op == "%") {
-    if (right == 0) {
-      throw std::invalid_argument("Взятие остатка от деления на 0");
-    }
-    return left % right;
+    return moduloChecked(left, right);
   }
-  throw std::invalid_argument("Неизвестный оператор " + op);
+  throw std::invalid_argument("Unknown operator " + op);
 }
 
 static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
@@ -170,27 +233,27 @@ static long long evaluatePostfix(gordejchik::Queue< std::string >& postfix)
       operands.push(std::stoll(token));
     } else if (isUnaryOp(token)) {
       if (operands.empty()) {
-        throw std::invalid_argument("Недостаточно опрерандов for !");
+        throw std::invalid_argument("Not enough operands for !");
       }
-      long long val = operands.top();
+      const long long val = operands.top();
       operands.pop();
       operands.push(~val);
     } else if (isBinaryOp(token)) {
       if (operands.size() < 2) {
-        throw std::invalid_argument("Недостаточно опрерандов");
+        throw std::invalid_argument("Not enough operands");
       }
-      long long right = operands.top();
+      const long long right = operands.top();
       operands.pop();
-      long long left = operands.top();
+      const long long left = operands.top();
       operands.pop();
       operands.push(applyBinary(left, right, token));
     } else {
-      throw std::invalid_argument("Неверный токен постфикса: " + token);
+      throw std::invalid_argument("Invalid postfix token: " + token);
     }
   }
 
   if (operands.size() != 1) {
-    throw std::invalid_argument("Неверное выражение");
+    throw std::invalid_argument("Invalid expression");
   }
   return operands.top();
 }
@@ -199,8 +262,8 @@ long long gordejchik::calculateExpression(const std::string& line)
 {
   gordejchik::Queue< std::string > tokens = tokenize(line);
   if (tokens.empty()) {
-    throw std::invalid_argument("Пустое выражение");
+    throw std::invalid_argument("Empty expression");
   }
-  gordejchik::Queue< std::string > postfix = infixToPostfix(tokens);
+  gordejchik::Queue< std::string > postfix = convertToPostfix(tokens);
   return evaluatePostfix(postfix);
 }

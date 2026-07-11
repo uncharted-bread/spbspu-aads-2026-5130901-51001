@@ -1,14 +1,20 @@
-#ifndef STACK_HPP
-#define STACK_HPP
+#ifndef GORDEJCHIK_STACK_HPP
+#define GORDEJCHIK_STACK_HPP
 
-#include "list.hpp"
+#include <cstddef>
 #include <stdexcept>
+#include <utility>
+#include "list.hpp"
 
 namespace gordejchik {
   template< class T >
   class Stack {
   public:
     void push(const T& value);
+
+    template< class... Args >
+    void emplace(Args&&... args);
+
     const T& top() const;
     void pop();
     bool empty() const;
@@ -22,6 +28,13 @@ namespace gordejchik {
   void Stack< T >::push(const T& value)
   {
     data_.pushBack(value);
+  }
+
+  template< class T >
+  template< class... Args >
+  void Stack< T >::emplace(Args&&... args)
+  {
+    data_.emplaceBack(std::forward< Args >(args)...);
   }
 
   template< class T >

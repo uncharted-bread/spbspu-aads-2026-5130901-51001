@@ -1,7 +1,7 @@
-#include "calc.hpp"
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
+#include "calc.hpp"
 #include "stack.hpp"
 
 int main(int argc, char* argv[])
@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
   if (argc > 1) {
     file.open(argv[1]);
     if (!file.is_open()) {
-      std::cerr << "Не получается открыть файл: " << argv[1] << "\n";
+      std::cerr << "Cannot open file: " << argv[1] << "\n";
       return 1;
     }
   }
@@ -19,11 +19,11 @@ int main(int argc, char* argv[])
   gordejchik::Stack< long long > results;
   std::string line;
   while (std::getline(input, line)) {
-    if (line.empty()) {
+    if (line.find_first_not_of(' ') == std::string::npos) {
       continue;
     }
     try {
-      long long result = gordejchik::calculateExpression(line);
+      const long long result = gordejchik::calculateExpression(line);
       results.push(result);
     } catch (const std::exception& e) {
       std::cerr << e.what() << "\n";

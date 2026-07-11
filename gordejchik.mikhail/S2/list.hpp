@@ -1,7 +1,8 @@
 #ifndef GORDEJCHIK_LIST_HPP
 #define GORDEJCHIK_LIST_HPP
 
-#include <iostream>
+#include <cstddef>
+#include <utility>
 #include "iterator.hpp"
 
 namespace gordejchik {
@@ -41,35 +42,47 @@ namespace gordejchik {
     void popFront();
     void popBack();
 
-    iterator insert(const_iterator pos, const T& value);
+    template< class... Args >
+    iterator emplaceAfter(const_iterator pos, Args&&... args);
 
+    template< class... Args >
+    void emplaceFront(Args&&... args);
+
+    template< class... Args >
+    void emplaceBack(Args&&... args);
+
+    iterator insert(const_iterator pos, const T& value);
     iterator erase(iterator pos);
+
     void clear() noexcept;
     void swap(List& other) noexcept;
 
   private:
-    using BaseNode = detail::BaseNode;
-    using Node = detail::Node< T >;
+    using Node = detail::node_t< T >;
 
-    void insertBefore(BaseNode* pos, Node* node) noexcept;
+    void linkBefore(Node* pos, Node* node) noexcept;
+    void unlink(Node* node) noexcept;
 
-    BaseNode fake_;
+    Node* head_;
+    Node* tail_;
     size_t size_;
   };
 
   template< class T >
   List< T >::List() noexcept:
-    fake_(),
+    head_(nullptr),
+    tail_(nullptr),
     size_(0)
   {}
 
   template< class T >
   List< T >::List(const List& other):
-    fake_(),
+    head_(nullptr),
+    tail_(nullptr),
     size_(0)
   {
     try {
-      for (auto it = other.cbegin(); it != other.cend(); ++it) {
+      for (const_iterator it = other.cbegin(); it != other.cend(); ++it) {
         pushBack(*it);
       }
     } catch (...) {
@@ -80,10 +93,13 @@ namespace gordejchik {
 
   template< class T >
   List< T >::List(List&& other) noexcept:
-    fake_(),
-    size_(0)
+    head_(other.head_),
+    tail_(other.tail_),
+    size_(other.size_)
   {
-    swap(other);
+    other.head_ = nullptr;
+    other.tail_ = nullptr;
+    other.size_ = 0;
   }
 
   template< class T >
@@ -113,73 +129,97 @@ namespace gordejchik {
   }
 
   template< class T >
-  void List< T >::insertBefore(BaseNode* pos, Node* node) noexcept
+  void List< T >::linkBefore(Node* pos, Node* node) noexcept
   {
-    node->next_ = pos;
-    node->prev_ = pos->prev_;
-    pos->prev_->next_ = node;
-    pos->prev_ = node;
+    node->next = pos;
+    node->prev = (pos != nullptr) ? pos->prev : tail_;
+    if (node->prev != nullptr) {
+      node->prev->next = node;
+    } else {
+      head_ = node;
+    }
+    if (pos != nullptr) {
+      pos->prev = node;
+    } else {
+      tail_ = node;
+    }
     ++size_;
+  }
+
+  template< class T >
+  void List< T >::unlink(Node* node) noexcept
+  {
+    if (node->prev != nullptr) {
+      node->prev->next = node->next;
+    } else {
+      head_ = node->next;
+    }
+    if (node->next != nullptr) {
+      node->next->prev = node->prev;
+    } else {
+      tail_ = node->prev;
+    }
+    --size_;
   }
 
   template< class T >
   typename List< T >::iterator List< T >::begin() noexcept
   {
-    return iterator(fake_.next_);
+    return iterator(head_);
   }
 
   template< class T >
   typename List< T >::iterator List< T >::end() noexcept
   {
-    return iterator(&fake_);
+    return iterator(nullptr);
   }
 
   template< class T >
   typename List< T >::const_iterator List< T >::begin() const noexcept
   {
-    return const_iterator(fake_.next_);
+    return const_iterator(head_);
   }
 
   template< class T >
   typename List< T >::const_iterator List< T >::end() const noexcept
   {
-    return const_iterator(&fake_);
+    return const_iterator(nullptr);
   }
 
   template< class T >
   typename List< T >::const_iterator List< T >::cbegin() const noexcept
   {
-    return const_iterator(fake_.next_);
+    return const_iterator(head_);
   }
 
   template< class T >
   typename List< T >::const_iterator List< T >::cend() const noexcept
   {
-    return const_iterator(&fake_);
+    return const_iterator(nullptr);
   }
 
   template< class T >
   T& List< T >::front()
   {
-    return static_cast< Node* >(fake_.next_)->value_;
+    return head_->data;
   }
 
   template< class T >
   const T& List< T >::front() const
   {
-    return static_cast< const Node* >(fake_.next_)->value_;
+    return head_->data;
   }
 
   template< class T >
   T& List< T >::back()
   {
-    return static_cast< Node* >(fake_.prev_)->value_;
+    return tail_->data;
   }
 
   template< class T >
   const T& List< T >::back() const
   {
-    return static_cast< const Node* >(fake_.prev_)->value_;
+    return tail_->data;
   }
 
   template< class T >
@@ -197,25 +237,25 @@ namespace gordejchik {
   template< class T >
   void List< T >::pushFront(const T& value)
   {
-    insertBefore(fake_.next_, new Node(value));
+    linkBefore(head_, detail::createNode< T >(value));
   }
 
   template< class T >
   void List< T >::pushFront(T&& value)
   {
-    insertBefore(fake_.next_, new Node(static_cast< T&& >(value)));
+    linkBefore(head_, detail::createNode< T >(std::move(value)));
   }
 
   template< class T >
   void List< T >::pushBack(const T& value)
   {
-    insertBefore(&fake_, new Node(value));
+    linkBefore(nullptr, detail::createNode< T >(value));
   }
 
   template< class T >
   void List< T >::pushBack(T&& value)
   {
-    insertBefore(&fake_, new Node(static_cast< T&& >(value)));
+    linkBefore(nullptr, detail::createNode< T >(std::move(value)));
   }
 
   template< class T >
@@ -227,76 +267,71 @@ namespace gordejchik {
   template< class T >
   void List< T >::popBack()
   {
-    erase(iterator(fake_.prev_));
+    erase(iterator(tail_));
+  }
+
+  template< class T >
+  template< class... Args >
+  typename List< T >::iterator List< T >::emplaceAfter(const_iterator pos, Args&&... args)
+  {
+    Node* node = detail::createNode< T >(std::forward< Args >(args)...);
+    Node* posNode = const_cast< Node* >(pos.node_);
+    linkBefore(posNode->next, node);
+    return iterator(node);
+  }
+
+  template< class T >
+  template< class... Args >
+  void List< T >::emplaceFront(Args&&... args)
+  {
+    linkBefore(head_, detail::createNode< T >(std::forward< Args >(args)...));
+  }
+
+  template< class T >
+  template< class... Args >
+  void List< T >::emplaceBack(Args&&... args)
+  {
+    linkBefore(nullptr, detail::createNode< T >(std::forward< Args >(args)...));
   }
 
   template< class T >
   typename List< T >::iterator List< T >::insert(const_iterator pos, const T& value)
   {
-    Node* node = new Node(value);
-    insertBefore(const_cast< BaseNode* >(pos.node_), node);
+    Node* node = detail::createNode< T >(value);
+    linkBefore(const_cast< Node* >(pos.node_), node);
     return iterator(node);
   }
 
   template< class T >
   typename List< T >::iterator List< T >::erase(iterator pos)
   {
-    BaseNode* node = pos.node_;
-    BaseNode* next = node->next_;
-    node->prev_->next_ = next;
-    next->prev_ = node->prev_;
-    delete static_cast< Node* >(node);
-    --size_;
-    return iterator(next);
+    Node* node = pos.node_;
+    iterator next(node->next);
+    unlink(node);
+    detail::destroyNode(node);
+    return next;
   }
 
   template< class T >
   void List< T >::clear() noexcept
   {
-    BaseNode* cur = fake_.next_;
-    while (cur != &fake_) {
-      BaseNode* next = cur->next_;
-      delete static_cast< Node* >(cur);
+    Node* cur = head_;
+    while (cur != nullptr) {
+      Node* next = cur->next;
+      detail::destroyNode(cur);
       cur = next;
     }
-    fake_.next_ = &fake_;
-    fake_.prev_ = &fake_;
+    head_ = nullptr;
+    tail_ = nullptr;
     size_ = 0;
   }
 
   template< class T >
   void List< T >::swap(List& other) noexcept
   {
-    const bool thisEmpty = empty();
-    const bool otherEmpty = other.empty();
-
-    BaseNode* tmpNext = fake_.next_;
-    BaseNode* tmpPrev = fake_.prev_;
-    size_t tmpSize = size_;
-
-    fake_.next_ = other.fake_.next_;
-    fake_.prev_ = other.fake_.prev_;
-    size_ = other.size_;
-
-    other.fake_.next_ = tmpNext;
-    other.fake_.prev_ = tmpPrev;
-    other.size_ = tmpSize;
-
-    if (otherEmpty) {
-      fake_.next_ = &fake_;
-      fake_.prev_ = &fake_;
-    } else {
-      fake_.next_->prev_ = &fake_;
-      fake_.prev_->next_ = &fake_;
-    }
-
-    if (thisEmpty) {
-      other.fake_.next_ = &other.fake_;
-      other.fake_.prev_ = &other.fake_;
-    } else {
-      other.fake_.next_->prev_ = &other.fake_;
-      other.fake_.prev_->next_ = &other.fake_;
-    }
+    std::swap(head_, other.head_);
+    std::swap(tail_, other.tail_);
+    std::swap(size_, other.size_);
   }
 }
 
