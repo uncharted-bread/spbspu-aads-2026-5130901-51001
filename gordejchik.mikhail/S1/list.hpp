@@ -2,6 +2,7 @@
 #define GORDEJCHIK_LIST_HPP
 
 #include <cstddef>
+#include <functional>
 #include <utility>
 #include "iterator.hpp"
 
@@ -51,6 +52,10 @@ namespace gordejchik {
     void splice(const_iterator pos, List& other) noexcept;
     void splice(const_iterator pos, List& other, const_iterator it) noexcept;
     void splice(const_iterator pos, List& other, const_iterator first, const_iterator last) noexcept;
+
+    void merge(List& other);
+    template< class Compare >
+    void merge(List& other, Compare cmp);
 
   private:
     using BaseNode = detail::BaseNode;
@@ -347,6 +352,30 @@ namespace gordejchik {
     relink(const_cast< BaseNode* >(pos.node_), firstNode, lastNode);
     other.size_ -= count;
     size_ += count;
+  }
+
+  template< class T >
+  void List< T >::merge(List& other)
+  {
+    merge(other, std::less< T >());
+  }
+
+  template< class T >
+  template< class Compare >
+  void List< T >::merge(List& other, Compare cmp)
+  {
+    if (this == &other) {
+      return;
+    }
+    iterator it = begin();
+    while (it != end() && !other.empty()) {
+      if (cmp(other.front(), *it)) {
+        splice(it, other, other.cbegin());
+      } else {
+        ++it;
+      }
+    }
+    splice(cend(), other);
   }
 }
 
