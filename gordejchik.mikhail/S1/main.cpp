@@ -2,6 +2,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include "list.hpp"
 #include "named-list.hpp"
 
@@ -12,14 +13,14 @@ namespace gordejchik {
     while (std::cin >> name) {
       NamedList namedList{name, {}};
       if (std::cin.eof()) {
-        namedLists.pushBack(static_cast< NamedList&& >(namedList));
+        namedLists.pushBack(std::move(namedList));
         break;
       }
       size_t num = 0;
       while (std::cin >> num) {
         namedList.nums.pushBack(num);
       }
-      namedLists.pushBack(static_cast< NamedList&& >(namedList));
+      namedLists.pushBack(std::move(namedList));
       std::cin.clear();
     }
   }

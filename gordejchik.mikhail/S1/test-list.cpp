@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE ListTest
 #include <boost/test/included/unit_test.hpp>
 #include <string>
+#include <utility>
 #include "list.hpp"
 
 using gordejchik::List;
@@ -208,7 +209,7 @@ BOOST_AUTO_TEST_CASE(moveConstructor)
   a.pushBack(1);
   a.pushBack(2);
 
-  List< int > b(static_cast< List< int >&& >(a));
+  List< int > b(std::move(a));
   BOOST_TEST(b.size() == 2u);
   BOOST_TEST(b.front() == 1);
   BOOST_TEST(b.back() == 2);
@@ -222,7 +223,7 @@ BOOST_AUTO_TEST_CASE(moveAssignment)
   a.pushBack(4);
 
   List< int > b;
-  b = static_cast< List< int >&& >(a);
+  b = std::move(a);
   BOOST_TEST(b.size() == 2u);
   BOOST_TEST(b.front() == 3);
   BOOST_TEST(a.empty());

@@ -271,17 +271,9 @@ namespace gordejchik {
     const bool thisEmpty = empty();
     const bool otherEmpty = other.empty();
 
-    BaseNode* tmpNext = fake_.next;
-    BaseNode* tmpPrev = fake_.prev;
-    size_t tmpSize = size_;
-
-    fake_.next = other.fake_.next;
-    fake_.prev = other.fake_.prev;
-    size_ = other.size_;
-
-    other.fake_.next = tmpNext;
-    other.fake_.prev = tmpPrev;
-    other.size_ = tmpSize;
+    std::swap(fake_.next, other.fake_.next);
+    std::swap(fake_.prev, other.fake_.prev);
+    std::swap(size_, other.size_);
 
     if (otherEmpty) {
       fake_.next = &fake_;
