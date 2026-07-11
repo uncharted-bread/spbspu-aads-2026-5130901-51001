@@ -1,6 +1,7 @@
 #ifndef GORDEJCHIK_NAMED_LIST_HPP
 #define GORDEJCHIK_NAMED_LIST_HPP
 
+#include <cstddef>
 #include <string>
 #include "list.hpp"
 

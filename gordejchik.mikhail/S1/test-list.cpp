@@ -1,7 +1,7 @@
 #define BOOST_TEST_MODULE ListTest
-#include <boost/test/included/unit_test.hpp>
 #include <string>
 #include <utility>
+#include <boost/test/included/unit_test.hpp>
 #include "list.hpp"
 
 using gordejchik::List;
