@@ -11,25 +11,25 @@ int main()
   using CommandTable = gordejchik::HashTable< std::string, gordejchik::CommandHandler >;
   const CommandTable commands = gordejchik::makeCommandTable();
   std::string line;
-  try {
-    while (std::getline(std::cin, line)) {
-      if (line.empty()) {
-        continue;
-      }
-      gordejchik::ParsedCommand cmd = gordejchik::parseLine(line);
-      if (cmd.count == 0) {
-        continue;
-      }
-      const std::string& name = cmd.tokens[0];
-      if (commands.contains(name)) {
-        commands.at(name)(decks, cmd, std::cout);
-      } else {
-        std::cout << "<INVALID COMMAND>" << "\n";
-      }
+  while (std::getline(std::cin, line)) {
+    if (line.empty()) {
+      continue;
     }
-  } catch (const std::exception& e) {
-    std::cerr << e.what() << "\n";
-    return 2;
+    gordejchik::ParsedCommand cmd = gordejchik::parseLine(line);
+    if (cmd.count == 0) {
+      continue;
+    }
+    CommandTable::ConstIterator it = commands.find(cmd.tokens[0]);
+    if (it != commands.cend()) {
+      try {
+        it->second(decks, cmd, std::cout);
+      } catch (const std::exception& e) {
+        std::cerr << "Internal error: " << e.what() << "\n";
+        return 2;
+      }
+    } else {
+      std::cout << "<INVALID COMMAND>" << "\n";
+    }
   }
   return 0;
 }
