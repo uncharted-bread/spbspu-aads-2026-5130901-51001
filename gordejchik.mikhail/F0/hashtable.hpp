@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <iterator>
 #include <stdexcept>
 #include <utility>
 
@@ -72,6 +73,12 @@ namespace gordejchik {
   class HashTable< Key, Value, Hash, Equal >::Iterator {
     friend class HashTable;
   public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = std::pair< Key, Value >;
+    using difference_type = std::ptrdiff_t;
+    using pointer = value_type*;
+    using reference = value_type&;
+
     value_type& operator*() const;
     value_type* operator->() const;
     Iterator& operator++();
@@ -91,6 +98,12 @@ namespace gordejchik {
   class HashTable< Key, Value, Hash, Equal >::ConstIterator {
     friend class HashTable;
   public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = std::pair< Key, Value >;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const value_type*;
+    using reference = const value_type&;
+
     ConstIterator(const Iterator& it);
 
     const value_type& operator*() const;
