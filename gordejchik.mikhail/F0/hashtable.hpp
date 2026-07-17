@@ -369,12 +369,18 @@ namespace gordejchik {
   void HashTable< Key, Value, Hash, Equal >::insert(
       const Key& key, const Value& value)
   {
+    size_t idx = findIndex(key);
+    if (idx != capacity_) {
+      slots_[idx].data.second = value;
+      return;
+    }
     if (shouldGrow()) {
       rehash(capacity_ * GROW_FACTOR);
     }
     insertInto(slots_, capacity_, key, value);
   }
 
+  // Precondition: key is not present in target.
   template< class Key, class Value, class Hash, class Equal >
   void HashTable< Key, Value, Hash, Equal >::insertInto(
       Slot* target, size_t cap, Key key, Value value)
@@ -388,10 +394,6 @@ namespace gordejchik {
         target[idx].psl = psl;
         target[idx].occupied = true;
         ++size_;
-        return;
-      }
-      if (equal_(target[idx].data.first, key)) {
-        target[idx].data.second = std::move(value);
         return;
       }
       if (psl > target[idx].psl) {

@@ -124,6 +124,20 @@ BOOST_AUTO_TEST_CASE(moveConstructor)
   BOOST_TEST(ht.size() == 0u);
 }
 
+BOOST_AUTO_TEST_CASE(overwriteKeepsCapacity)
+{
+  HashTable< int, int > ht(4);
+  ht.insert(1, 10);
+  ht.insert(2, 20);
+  ht.insert(3, 30);
+  const size_t cap = ht.capacity();
+
+  ht.insert(3, 33);
+  BOOST_TEST(ht.capacity() == cap);
+  BOOST_TEST(ht.size() == 3u);
+  BOOST_TEST(ht.at(3) == 33);
+}
+
 BOOST_AUTO_TEST_CASE(findExisting)
 {
   HashTable< std::string, int > ht;
