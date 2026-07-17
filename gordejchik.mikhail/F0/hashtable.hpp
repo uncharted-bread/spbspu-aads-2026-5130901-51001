@@ -30,6 +30,8 @@ namespace gordejchik {
     void insert(const Key& key, const Value& value);
     Value& at(const Key& key);
     const Value& at(const Key& key) const;
+    Iterator find(const Key& key);
+    ConstIterator find(const Key& key) const;
     bool contains(const Key& key) const;
     void erase(const Key& key);
 
@@ -269,6 +271,28 @@ namespace gordejchik {
       throw std::out_of_range("Key not found");
     }
     return slots_[idx].data.second;
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::Iterator
+  HashTable< Key, Value, Hash, Equal >::find(const Key& key)
+  {
+    size_t idx = findIndex(key);
+    if (idx == capacity_) {
+      return end();
+    }
+    return Iterator(slots_ + idx, slots_ + capacity_);
+  }
+
+  template< class Key, class Value, class Hash, class Equal >
+  typename HashTable< Key, Value, Hash, Equal >::ConstIterator
+  HashTable< Key, Value, Hash, Equal >::find(const Key& key) const
+  {
+    size_t idx = findIndex(key);
+    if (idx == capacity_) {
+      return end();
+    }
+    return ConstIterator(slots_ + idx, slots_ + capacity_);
   }
 
   template< class Key, class Value, class Hash, class Equal >

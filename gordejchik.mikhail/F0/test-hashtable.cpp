@@ -124,6 +124,41 @@ BOOST_AUTO_TEST_CASE(moveConstructor)
   BOOST_TEST(ht.size() == 0u);
 }
 
+BOOST_AUTO_TEST_CASE(findExisting)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("a", 1);
+  ht.insert("b", 2);
+
+  using Iter = HashTable< std::string, int >::Iterator;
+  Iter it = ht.find("b");
+  BOOST_TEST((it != ht.end()));
+  BOOST_TEST(it->second == 2);
+
+  it->second = 22;
+  BOOST_TEST(ht.at("b") == 22);
+}
+
+BOOST_AUTO_TEST_CASE(findMissing)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("a", 1);
+  BOOST_TEST((ht.find("z") == ht.end()));
+}
+
+BOOST_AUTO_TEST_CASE(constFind)
+{
+  HashTable< std::string, int > ht;
+  ht.insert("x", 10);
+
+  const HashTable< std::string, int >& ref = ht;
+  using CIter = HashTable< std::string, int >::ConstIterator;
+  CIter it = ref.find("x");
+  BOOST_TEST((it != ref.cend()));
+  BOOST_TEST(it->second == 10);
+  BOOST_TEST((ref.find("nope") == ref.cend()));
+}
+
 BOOST_AUTO_TEST_CASE(emptyTableIteration)
 {
   HashTable< std::string, int > ht;
