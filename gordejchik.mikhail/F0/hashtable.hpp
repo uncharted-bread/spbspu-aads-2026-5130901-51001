@@ -49,9 +49,9 @@ namespace gordejchik {
     static constexpr size_t GROW_FACTOR = 2;
 
     struct Slot {
-      value_type data_;
-      size_t psl_;
-      bool occupied_;
+      value_type data;
+      size_t psl;
+      bool occupied;
     };
 
     Slot* slots_;
@@ -236,11 +236,11 @@ namespace gordejchik {
   {
     size_t idx = hash_(key) % capacity_;
     size_t psl = 0;
-    while (slots_[idx].occupied_) {
-      if (psl > slots_[idx].psl_) {
+    while (slots_[idx].occupied) {
+      if (psl > slots_[idx].psl) {
         return capacity_;
       }
-      if (equal_(slots_[idx].data_.first, key)) {
+      if (equal_(slots_[idx].data.first, key)) {
         return idx;
       }
       ++psl;
@@ -257,7 +257,7 @@ namespace gordejchik {
     if (idx == capacity_) {
       throw std::out_of_range("Key not found");
     }
-    return slots_[idx].data_.second;
+    return slots_[idx].data.second;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -268,7 +268,7 @@ namespace gordejchik {
     if (idx == capacity_) {
       throw std::out_of_range("Key not found");
     }
-    return slots_[idx].data_.second;
+    return slots_[idx].data.second;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -289,15 +289,15 @@ namespace gordejchik {
     size_t i = idx;
     while (true) {
       size_t j = (i + 1) % capacity_;
-      if (!slots_[j].occupied_ || slots_[j].psl_ == 0) {
+      if (!slots_[j].occupied || slots_[j].psl == 0) {
         break;
       }
       slots_[i] = std::move(slots_[j]);
-      --slots_[i].psl_;
+      --slots_[i].psl;
       i = j;
     }
-    slots_[i].occupied_ = false;
-    slots_[i].psl_ = 0;
+    slots_[i].occupied = false;
+    slots_[i].psl = 0;
     --size_;
   }
 
@@ -319,10 +319,10 @@ namespace gordejchik {
     capacity_ = newCapacity;
     size_ = 0;
     for (size_t i = 0; i < oldCapacity; ++i) {
-      if (oldSlots[i].occupied_) {
+      if (oldSlots[i].occupied) {
         insertInto(slots_, capacity_,
-            std::move(oldSlots[i].data_.first),
-            std::move(oldSlots[i].data_.second));
+            std::move(oldSlots[i].data.first),
+            std::move(oldSlots[i].data.second));
       }
     }
     delete[] oldSlots;
@@ -345,22 +345,22 @@ namespace gordejchik {
     size_t idx = hash_(key) % cap;
     size_t psl = 0;
     while (true) {
-      if (!target[idx].occupied_) {
-        target[idx].data_.first = std::move(key);
-        target[idx].data_.second = std::move(value);
-        target[idx].psl_ = psl;
-        target[idx].occupied_ = true;
+      if (!target[idx].occupied) {
+        target[idx].data.first = std::move(key);
+        target[idx].data.second = std::move(value);
+        target[idx].psl = psl;
+        target[idx].occupied = true;
         ++size_;
         return;
       }
-      if (equal_(target[idx].data_.first, key)) {
-        target[idx].data_.second = std::move(value);
+      if (equal_(target[idx].data.first, key)) {
+        target[idx].data.second = std::move(value);
         return;
       }
-      if (psl > target[idx].psl_) {
-        std::swap(key, target[idx].data_.first);
-        std::swap(value, target[idx].data_.second);
-        std::swap(psl, target[idx].psl_);
+      if (psl > target[idx].psl) {
+        std::swap(key, target[idx].data.first);
+        std::swap(value, target[idx].data.second);
+        std::swap(psl, target[idx].psl);
       }
       ++psl;
       idx = (idx + 1) % cap;
@@ -377,7 +377,7 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   void HashTable< Key, Value, Hash, Equal >::Iterator::skipEmpty()
   {
-    while (current_ != end_ && !current_->occupied_) {
+    while (current_ != end_ && !current_->occupied) {
       ++current_;
     }
   }
@@ -386,14 +386,14 @@ namespace gordejchik {
   typename HashTable< Key, Value, Hash, Equal >::value_type&
   HashTable< Key, Value, Hash, Equal >::Iterator::operator*() const
   {
-    return current_->data_;
+    return current_->data;
   }
 
   template< class Key, class Value, class Hash, class Equal >
   typename HashTable< Key, Value, Hash, Equal >::value_type*
   HashTable< Key, Value, Hash, Equal >::Iterator::operator->() const
   {
-    return &current_->data_;
+    return &current_->data;
   }
 
   template< class Key, class Value, class Hash, class Equal >
@@ -445,7 +445,7 @@ namespace gordejchik {
   template< class Key, class Value, class Hash, class Equal >
   void HashTable< Key, Value, Hash, Equal >::ConstIterator::skipEmpty()
   {
-    while (current_ != end_ && !current_->occupied_) {
+    while (current_ != end_ && !current_->occupied) {
       ++current_;
     }
   }
@@ -454,14 +454,14 @@ namespace gordejchik {
   const typename HashTable< Key, Value, Hash, Equal >::value_type&
   HashTable< Key, Value, Hash, Equal >::ConstIterator::operator*() const
   {
-    return current_->data_;
+    return current_->data;
   }
 
   template< class Key, class Value, class Hash, class Equal >
   const typename HashTable< Key, Value, Hash, Equal >::value_type*
   HashTable< Key, Value, Hash, Equal >::ConstIterator::operator->() const
   {
-    return &current_->data_;
+    return &current_->data;
   }
 
   template< class Key, class Value, class Hash, class Equal >
