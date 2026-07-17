@@ -158,6 +158,10 @@ void gordejchik::cmdAdd(DeckStore& decks,
     fail(out);
     return;
   }
+  if (cost < 0) {
+    fail(out);
+    return;
+  }
   Deck& deck = decks.at(deckName);
   if (deck.contains(cardName)) {
     fail(out);
@@ -716,6 +720,10 @@ void gordejchik::cmdLoad(DeckStore& decks,
       fail(out);
       return;
     } catch (const std::out_of_range&) {
+      fail(out);
+      return;
+    }
+    if (cost < 0) {
       fail(out);
       return;
     }
