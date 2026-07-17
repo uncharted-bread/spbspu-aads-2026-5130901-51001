@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include "backpack.hpp"
 
@@ -649,9 +650,8 @@ void gordejchik::cmdSave(DeckStore& decks,
   file << count << "\n";
   for (Deck::ConstIterator it = deck.cbegin(); it != deck.cend(); ++it) {
     const Card& card = it->second;
-    file << card.name << " "
-        << card.power << " "
-        << card.cost << "\n";
+    file << card.name << "\n";
+    file << card.power << " " << card.cost << "\n";
     file << card.type << "\n";
     file << card.description << "\n";
   }
@@ -681,28 +681,22 @@ void gordejchik::cmdLoad(DeckStore& decks,
     fail(out);
     return;
   }
-  file.ignore();
+  file.ignore(std::numeric_limits< std::streamsize >::max(), '\n');
   Deck deck;
   for (size_t i = 0; i < count; ++i) {
-    std::string header;
-    if (!std::getline(file, header)) {
+    std::string cardName;
+    std::string stats;
+    if (!std::getline(file, cardName) || !std::getline(file, stats)) {
       fail(out);
       return;
     }
-    size_t space1 = header.find(' ');
-    if (space1 == std::string::npos) {
+    const size_t space = stats.find(' ');
+    if (space == std::string::npos) {
       fail(out);
       return;
     }
-    size_t space2 = header.find(' ', space1 + 1);
-    if (space2 == std::string::npos) {
-      fail(out);
-      return;
-    }
-    std::string cardName = header.substr(0, space1);
-    std::string powerStr = header.substr(space1 + 1,
-        space2 - space1 - 1);
-    std::string costStr = header.substr(space2 + 1);
+    std::string powerStr = stats.substr(0, space);
+    std::string costStr = stats.substr(space + 1);
     int power = 0;
     int cost = 0;
     try {
