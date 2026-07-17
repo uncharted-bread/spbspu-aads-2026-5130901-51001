@@ -82,6 +82,27 @@ BOOST_AUTO_TEST_CASE(moveTransfersOwnership)
   BOOST_TEST(res.totalPower() == 0);
 }
 
+BOOST_AUTO_TEST_CASE(hugeBudget)
+{
+  Card c1{"x", 5, 2, "", ""};
+  Card c2{"y", 7, 3, "", ""};
+  Card* arr[] = {&c1, &c2};
+  BackpackResult res = solveBackpack(arr, 2, 2000000000);
+
+  BOOST_TEST(res.count() == 2u);
+  BOOST_TEST(res.totalPower() == 12);
+}
+
+BOOST_AUTO_TEST_CASE(negativeCostNeverTaken)
+{
+  Card c{"cursed", 10, -5, "", ""};
+  Card* arr[] = {&c};
+  BackpackResult res = solveBackpack(arr, 1, 10);
+
+  BOOST_TEST(res.count() == 0u);
+  BOOST_TEST(res.totalPower() == 0);
+}
+
 BOOST_AUTO_TEST_CASE(greedyWouldFail)
 {
   Card c1{"cheap", 8, 4, "", ""};

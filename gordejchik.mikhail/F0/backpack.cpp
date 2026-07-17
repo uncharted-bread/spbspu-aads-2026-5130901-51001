@@ -1,4 +1,5 @@
 #include "backpack.hpp"
+#include <algorithm>
 
 gordejchik::BackpackResult::BackpackResult(BackpackResult&& other) noexcept:
   cards_(other.cards_),
@@ -57,7 +58,14 @@ gordejchik::BackpackResult gordejchik::solveBackpack(
     return BackpackResult(nullptr, 0, 0);
   }
   const size_t n = cardCount;
-  const size_t w = static_cast< size_t >(budget);
+  size_t costSum = 0;
+  for (size_t i = 0; i < n; ++i) {
+    const int cost = allCards[i]->cost;
+    if (cost > 0) {
+      costSum += static_cast< size_t >(cost);
+    }
+  }
+  const size_t w = std::min(static_cast< size_t >(budget), costSum);
   const size_t cols = w + 1;
   int* dp = new int[(n + 1) * cols]();
   for (size_t i = 1; i <= n; ++i) {
