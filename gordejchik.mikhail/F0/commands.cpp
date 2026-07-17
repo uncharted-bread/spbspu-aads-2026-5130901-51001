@@ -1,5 +1,6 @@
 #include "commands.hpp"
 #include <algorithm>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -9,6 +10,83 @@
 static void fail(std::ostream& out)
 {
   out << "<INVALID COMMAND>" << "\n";
+}
+
+static int parseInt(const std::string& str)
+{
+  size_t pos = 0;
+  const int value = std::stoi(str, &pos);
+  if (pos != str.size()) {
+    throw std::invalid_argument("Not a whole number: " + str);
+  }
+  return value;
+}
+
+static void printSortedNames(const gordejchik::Deck& deck,
+    std::string* names, size_t count, std::ostream& out)
+{
+  std::sort(names, names + count);
+  for (size_t i = 0; i < count; ++i) {
+    const gordejchik::Card& card = deck.at(names[i]);
+    out << names[i] << ": POWER " << card.power
+        << ", COST " << card.cost << "\n";
+  }
+}
+
+static void printBackpackCards(const gordejchik::Deck& deck,
+    const gordejchik::BackpackResult& res, std::ostream& out)
+{
+  const size_t count = res.count();
+  if (count == 0) {
+    return;
+  }
+  std::string* names = new std::string[count];
+  try {
+    for (size_t i = 0; i < count; ++i) {
+      names[i] = res.cards()[i]->name;
+    }
+    printSortedNames(deck, names, count, out);
+  } catch (...) {
+    delete[] names;
+    throw;
+  }
+  delete[] names;
+}
+
+static gordejchik::BackpackResult solveDeck(
+    gordejchik::Deck& deck, int budget)
+{
+  using gordejchik::Card;
+  using gordejchik::Deck;
+  using gordejchik::BackpackResult;
+  const size_t count = deck.size();
+  if (count == 0) {
+    return BackpackResult(nullptr, 0, 0);
+  }
+  Card** cards = new Card*[count];
+  size_t idx = 0;
+  for (Deck::Iterator it = deck.begin(); it != deck.end(); ++it) {
+    cards[idx] = &it->second;
+    ++idx;
+  }
+  BackpackResult res(nullptr, 0, 0);
+  try {
+    res = gordejchik::solveBackpack(cards, count, budget);
+  } catch (...) {
+    delete[] cards;
+    throw;
+  }
+  delete[] cards;
+  return res;
+}
+
+static void printBattleSide(const std::string& deckName,
+    const gordejchik::Deck& deck,
+    const gordejchik::BackpackResult& res, std::ostream& out)
+{
+  out << "=== " << deckName << " ===" << "\n";
+  printBackpackCards(deck, res, out);
+  out << "TOTAL POWER: " << res.totalPower() << "\n";
 }
 
 gordejchik::ParsedCommand gordejchik::parseLine(
@@ -130,31 +208,17 @@ void gordejchik::cmdAdd(DeckStore& decks,
   }
   const std::string& deckName = cmd.tokens[1];
   const std::string& cardName = cmd.tokens[2];
-  const std::string& powerStr = cmd.tokens[3];
-  const std::string& costStr = cmd.tokens[4];
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
   int power = 0;
   int cost = 0;
   try {
-    size_t pos = 0;
-    power = std::stoi(powerStr, &pos);
-    if (pos != powerStr.size()) {
-      fail(out);
-      return;
-    }
-    pos = 0;
-    cost = std::stoi(costStr, &pos);
-    if (pos != costStr.size()) {
-      fail(out);
-      return;
-    }
-  } catch (const std::invalid_argument&) {
-    fail(out);
-    return;
-  } catch (const std::out_of_range&) {
+    power = parseInt(cmd.tokens[3]);
+    cost = parseInt(cmd.tokens[4]);
+  } catch (const std::exception&) {
     fail(out);
     return;
   }
@@ -162,7 +226,7 @@ void gordejchik::cmdAdd(DeckStore& decks,
     fail(out);
     return;
   }
-  Deck& deck = decks.at(deckName);
+  Deck& deck = deckIt->second;
   if (deck.contains(cardName)) {
     fail(out);
     return;
@@ -180,11 +244,12 @@ void gordejchik::cmdRemove(DeckStore& decks,
   }
   const std::string& deckName = cmd.tokens[1];
   const std::string& cardName = cmd.tokens[2];
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
-  Deck& deck = decks.at(deckName);
+  Deck& deck = deckIt->second;
   if (!deck.contains(cardName)) {
     fail(out);
     return;
@@ -201,11 +266,12 @@ void gordejchik::cmdShow(DeckStore& decks,
     return;
   }
   const std::string& name = cmd.tokens[1];
-  if (!decks.contains(name)) {
+  DeckStore::Iterator deckIt = decks.find(name);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
-  const Deck& deck = decks.at(name);
+  const Deck& deck = deckIt->second;
   const size_t count = deck.size();
   std::cerr << "Deck '" << name << "': " << count << " cards" << "\n";
   if (count == 0) {
@@ -218,12 +284,7 @@ void gordejchik::cmdShow(DeckStore& decks,
       names[idx] = it->first;
       ++idx;
     }
-    std::sort(names, names + count);
-    for (size_t i = 0; i < count; ++i) {
-      const Card& card = deck.at(names[i]);
-      out << names[i] << ": POWER " << card.power
-          << ", COST " << card.cost << "\n";
-    }
+    printSortedNames(deck, names, count, out);
   } catch (...) {
     delete[] names;
     throw;
@@ -240,16 +301,18 @@ void gordejchik::cmdInfo(DeckStore& decks,
   }
   const std::string& deckName = cmd.tokens[1];
   const std::string& cardName = cmd.tokens[2];
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
-  Deck& deck = decks.at(deckName);
-  if (!deck.contains(cardName)) {
+  Deck& deck = deckIt->second;
+  Deck::Iterator cardIt = deck.find(cardName);
+  if (cardIt == deck.end()) {
     fail(out);
     return;
   }
-  const Card& card = deck.at(cardName);
+  const Card& card = cardIt->second;
   std::string upper = card.name;
   for (size_t i = 0; i < upper.size(); ++i) {
     if (upper[i] >= 'a' && upper[i] <= 'z') {
@@ -284,17 +347,17 @@ void gordejchik::cmdSetType(DeckStore& decks,
   }
   const std::string& deckName = cmd.tokens[1];
   const std::string& cardName = cmd.tokens[2];
-  const std::string& type = cmd.tokens[3];
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
-  Deck& deck = decks.at(deckName);
-  if (!deck.contains(cardName)) {
+  Deck::Iterator cardIt = deckIt->second.find(cardName);
+  if (cardIt == deckIt->second.end()) {
     fail(out);
     return;
   }
-  deck.at(cardName).type = type;
+  cardIt->second.type = cmd.tokens[3];
   std::cerr << "Type of card '" << cardName << "' set" << "\n";
 }
 
@@ -307,17 +370,17 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
   }
   const std::string& deckName = cmd.tokens[1];
   const std::string& cardName = cmd.tokens[2];
-  const std::string& desc = cmd.tokens[3];
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
-  Deck& deck = decks.at(deckName);
-  if (!deck.contains(cardName)) {
+  Deck::Iterator cardIt = deckIt->second.find(cardName);
+  if (cardIt == deckIt->second.end()) {
     fail(out);
     return;
   }
-  deck.at(cardName).description = desc;
+  cardIt->second.description = cmd.tokens[3];
   std::cerr << "Description of card '" << cardName << "' set" << "\n";
 }
 
@@ -330,9 +393,8 @@ void gordejchik::cmdRange(DeckStore& decks,
   }
   const std::string& deckName = cmd.tokens[1];
   const std::string& stat = cmd.tokens[2];
-  const std::string& minStr = cmd.tokens[3];
-  const std::string& maxStr = cmd.tokens[4];
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
@@ -343,22 +405,9 @@ void gordejchik::cmdRange(DeckStore& decks,
   int minVal = 0;
   int maxVal = 0;
   try {
-    size_t pos = 0;
-    minVal = std::stoi(minStr, &pos);
-    if (pos != minStr.size()) {
-      fail(out);
-      return;
-    }
-    pos = 0;
-    maxVal = std::stoi(maxStr, &pos);
-    if (pos != maxStr.size()) {
-      fail(out);
-      return;
-    }
-  } catch (const std::invalid_argument&) {
-    fail(out);
-    return;
-  } catch (const std::out_of_range&) {
+    minVal = parseInt(cmd.tokens[3]);
+    maxVal = parseInt(cmd.tokens[4]);
+  } catch (const std::exception&) {
     fail(out);
     return;
   }
@@ -366,9 +415,10 @@ void gordejchik::cmdRange(DeckStore& decks,
     fail(out);
     return;
   }
-  const Deck& deck = decks.at(deckName);
+  const Deck& deck = deckIt->second;
   const size_t total = deck.size();
   if (total == 0) {
+    std::cerr << "Cards found: 0" << "\n";
     return;
   }
   std::string* names = new std::string[total];
@@ -383,12 +433,7 @@ void gordejchik::cmdRange(DeckStore& decks,
         ++found;
       }
     }
-    std::sort(names, names + found);
-    for (size_t i = 0; i < found; ++i) {
-      const Card& card = deck.at(names[i]);
-      out << names[i] << ": POWER " << card.power
-          << ", COST " << card.cost << "\n";
-    }
+    printSortedNames(deck, names, found, out);
     std::cerr << "Cards found: " << found << "\n";
   } catch (...) {
     delete[] names;
@@ -405,9 +450,9 @@ void gordejchik::cmdOptimize(DeckStore& decks,
     return;
   }
   const std::string& deckName = cmd.tokens[1];
-  const std::string& budgetStr = cmd.tokens[2];
   const std::string newDeckName = (cmd.count == 4) ? cmd.tokens[3] : "";
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
@@ -417,16 +462,8 @@ void gordejchik::cmdOptimize(DeckStore& decks,
   }
   int budget = 0;
   try {
-    size_t pos = 0;
-    budget = std::stoi(budgetStr, &pos);
-    if (pos != budgetStr.size()) {
-      fail(out);
-      return;
-    }
-  } catch (const std::invalid_argument&) {
-    fail(out);
-    return;
-  } catch (const std::out_of_range&) {
+    budget = parseInt(cmd.tokens[2]);
+  } catch (const std::exception&) {
     fail(out);
     return;
   }
@@ -434,51 +471,20 @@ void gordejchik::cmdOptimize(DeckStore& decks,
     fail(out);
     return;
   }
-  Deck& deck = decks.at(deckName);
-  const size_t count = deck.size();
-  if (count == 0) {
-    out << "TOTAL POWER: 0" << "\n";
+  Deck& deck = deckIt->second;
+  BackpackResult res = solveDeck(deck, budget);
+  printBackpackCards(deck, res, out);
+  out << "TOTAL POWER: " << res.totalPower() << "\n";
+  if (newDeckName.empty()) {
     return;
   }
-  Card** allCards = new Card*[count];
-  size_t idx = 0;
-  for (Deck::Iterator it = deck.begin(); it != deck.end(); ++it) {
-    allCards[idx] = &it->second;
-    ++idx;
+  Deck newDeck;
+  for (size_t i = 0; i < res.count(); ++i) {
+    const Card* card = res.cards()[i];
+    newDeck.insert(card->name, *card);
   }
-  BackpackResult res(nullptr, 0, 0);
-  try {
-    res = solveBackpack(allCards, count, budget);
-  } catch (...) {
-    delete[] allCards;
-    throw;
-  }
-  delete[] allCards;
-  std::string* names = new std::string[res.count()];
-  try {
-    for (size_t i = 0; i < res.count(); ++i) {
-      names[i] = res.cards()[i]->name;
-    }
-    std::sort(names, names + res.count());
-    for (size_t i = 0; i < res.count(); ++i) {
-      const Card& card = deck.at(names[i]);
-      out << names[i] << ": POWER " << card.power
-          << ", COST " << card.cost << "\n";
-    }
-    out << "TOTAL POWER: " << res.totalPower() << "\n";
-    if (!newDeckName.empty()) {
-      Deck newDeck;
-      for (size_t i = 0; i < res.count(); ++i) {
-        newDeck.insert(names[i], deck.at(names[i]));
-      }
-      decks.insert(newDeckName, newDeck);
-      std::cerr << "Created deck '" << newDeckName << "'" << "\n";
-    }
-  } catch (...) {
-    delete[] names;
-    throw;
-  }
-  delete[] names;
+  decks.insert(newDeckName, newDeck);
+  std::cerr << "Created deck '" << newDeckName << "'" << "\n";
 }
 
 void gordejchik::cmdBattle(DeckStore& decks,
@@ -490,24 +496,16 @@ void gordejchik::cmdBattle(DeckStore& decks,
   }
   const std::string& deck1Name = cmd.tokens[1];
   const std::string& deck2Name = cmd.tokens[2];
-  const std::string& budgetStr = cmd.tokens[3];
-  if (!decks.contains(deck1Name)
-      || !decks.contains(deck2Name)) {
+  DeckStore::Iterator it1 = decks.find(deck1Name);
+  DeckStore::Iterator it2 = decks.find(deck2Name);
+  if (it1 == decks.end() || it2 == decks.end()) {
     fail(out);
     return;
   }
   int budget = 0;
   try {
-    size_t pos = 0;
-    budget = std::stoi(budgetStr, &pos);
-    if (pos != budgetStr.size()) {
-      fail(out);
-      return;
-    }
-  } catch (const std::invalid_argument&) {
-    fail(out);
-    return;
-  } catch (const std::out_of_range&) {
+    budget = parseInt(cmd.tokens[3]);
+  } catch (const std::exception&) {
     fail(out);
     return;
   }
@@ -515,80 +513,12 @@ void gordejchik::cmdBattle(DeckStore& decks,
     fail(out);
     return;
   }
-  Deck& deck1 = decks.at(deck1Name);
-  Deck& deck2 = decks.at(deck2Name);
-  const size_t count1 = deck1.size();
-  const size_t count2 = deck2.size();
-  Card** arr1 = nullptr;
-  Card** arr2 = nullptr;
-  BackpackResult res1(nullptr, 0, 0);
-  BackpackResult res2(nullptr, 0, 0);
-  try {
-    if (count1 > 0) {
-      arr1 = new Card*[count1];
-      size_t idx = 0;
-      for (Deck::Iterator it = deck1.begin(); it != deck1.end(); ++it) {
-        arr1[idx] = &it->second;
-        ++idx;
-      }
-    }
-    if (count2 > 0) {
-      arr2 = new Card*[count2];
-      size_t idx = 0;
-      for (Deck::Iterator it = deck2.begin(); it != deck2.end(); ++it) {
-        arr2[idx] = &it->second;
-        ++idx;
-      }
-    }
-    res1 = solveBackpack(arr1, count1, budget);
-    res2 = solveBackpack(arr2, count2, budget);
-  } catch (...) {
-    delete[] arr1;
-    delete[] arr2;
-    throw;
-  }
-  delete[] arr1;
-  delete[] arr2;
-  out << "=== " << deck1Name << " ===" << "\n";
-  if (res1.count() > 0) {
-    std::string* names1 = new std::string[res1.count()];
-    try {
-      for (size_t i = 0; i < res1.count(); ++i) {
-        names1[i] = res1.cards()[i]->name;
-      }
-      std::sort(names1, names1 + res1.count());
-      for (size_t i = 0; i < res1.count(); ++i) {
-        const Card& card = deck1.at(names1[i]);
-        out << names1[i] << ": POWER " << card.power
-            << ", COST " << card.cost << "\n";
-      }
-    } catch (...) {
-      delete[] names1;
-      throw;
-    }
-    delete[] names1;
-  }
-  out << "TOTAL POWER: " << res1.totalPower() << "\n";
-  out << "=== " << deck2Name << " ===" << "\n";
-  if (res2.count() > 0) {
-    std::string* names2 = new std::string[res2.count()];
-    try {
-      for (size_t i = 0; i < res2.count(); ++i) {
-        names2[i] = res2.cards()[i]->name;
-      }
-      std::sort(names2, names2 + res2.count());
-      for (size_t i = 0; i < res2.count(); ++i) {
-        const Card& card = deck2.at(names2[i]);
-        out << names2[i] << ": POWER " << card.power
-            << ", COST " << card.cost << "\n";
-      }
-    } catch (...) {
-      delete[] names2;
-      throw;
-    }
-    delete[] names2;
-  }
-  out << "TOTAL POWER: " << res2.totalPower() << "\n";
+  Deck& deck1 = it1->second;
+  Deck& deck2 = it2->second;
+  BackpackResult res1 = solveDeck(deck1, budget);
+  BackpackResult res2 = solveDeck(deck2, budget);
+  printBattleSide(deck1Name, deck1, res1, out);
+  printBattleSide(deck2Name, deck2, res2, out);
   if (res1.totalPower() > res2.totalPower()) {
     out << "WINNER: " << deck1Name << "\n";
   } else if (res2.totalPower() > res1.totalPower()) {
@@ -606,9 +536,9 @@ void gordejchik::cmdMerge(DeckStore& decks,
     return;
   }
   const std::string& newName = cmd.tokens[1];
-  const std::string& name1 = cmd.tokens[2];
-  const std::string& name2 = cmd.tokens[3];
-  if (!decks.contains(name1) || !decks.contains(name2)) {
+  DeckStore::Iterator it1 = decks.find(cmd.tokens[2]);
+  DeckStore::Iterator it2 = decks.find(cmd.tokens[3]);
+  if (it1 == decks.end() || it2 == decks.end()) {
     fail(out);
     return;
   }
@@ -616,8 +546,8 @@ void gordejchik::cmdMerge(DeckStore& decks,
     fail(out);
     return;
   }
-  const Deck& d1 = decks.at(name1);
-  const Deck& d2 = decks.at(name2);
+  const Deck& d1 = it1->second;
+  const Deck& d2 = it2->second;
   Deck merged;
   for (Deck::ConstIterator it = d1.cbegin(); it != d1.cend(); ++it) {
     merged.insert(it->first, it->second);
@@ -640,18 +570,18 @@ void gordejchik::cmdSave(DeckStore& decks,
   }
   const std::string& deckName = cmd.tokens[1];
   const std::string& filename = cmd.tokens[2];
-  if (!decks.contains(deckName)) {
+  DeckStore::Iterator deckIt = decks.find(deckName);
+  if (deckIt == decks.end()) {
     fail(out);
     return;
   }
-  Deck& deck = decks.at(deckName);
+  const Deck& deck = deckIt->second;
   std::ofstream file(filename);
   if (!file.is_open()) {
     fail(out);
     return;
   }
-  const size_t count = deck.size();
-  file << count << "\n";
+  file << deck.size() << "\n";
   for (Deck::ConstIterator it = deck.cbegin(); it != deck.cend(); ++it) {
     const Card& card = it->second;
     file << card.name << "\n";
@@ -699,27 +629,12 @@ void gordejchik::cmdLoad(DeckStore& decks,
       fail(out);
       return;
     }
-    std::string powerStr = stats.substr(0, space);
-    std::string costStr = stats.substr(space + 1);
     int power = 0;
     int cost = 0;
     try {
-      size_t pos = 0;
-      power = std::stoi(powerStr, &pos);
-      if (pos != powerStr.size()) {
-        fail(out);
-        return;
-      }
-      pos = 0;
-      cost = std::stoi(costStr, &pos);
-      if (pos != costStr.size()) {
-        fail(out);
-        return;
-      }
-    } catch (const std::invalid_argument&) {
-      fail(out);
-      return;
-    } catch (const std::out_of_range&) {
+      power = parseInt(stats.substr(0, space));
+      cost = parseInt(stats.substr(space + 1));
+    } catch (const std::exception&) {
       fail(out);
       return;
     }
@@ -729,8 +644,7 @@ void gordejchik::cmdLoad(DeckStore& decks,
     }
     std::string type;
     std::string desc;
-    if (!std::getline(file, type)
-        || !std::getline(file, desc)) {
+    if (!std::getline(file, type) || !std::getline(file, desc)) {
       fail(out);
       return;
     }
