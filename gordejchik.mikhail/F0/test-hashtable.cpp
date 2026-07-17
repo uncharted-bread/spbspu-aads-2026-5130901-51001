@@ -124,6 +124,36 @@ BOOST_AUTO_TEST_CASE(moveConstructor)
   BOOST_TEST(ht.size() == 0u);
 }
 
+BOOST_AUTO_TEST_CASE(copyAssignment)
+{
+  HashTable< std::string, int > src;
+  src.insert("x", 100);
+  HashTable< std::string, int > dst;
+  dst.insert("y", 200);
+
+  dst = src;
+  BOOST_TEST(dst.size() == 1u);
+  BOOST_TEST(dst.at("x") == 100);
+  BOOST_TEST(!dst.contains("y"));
+
+  dst.insert("x", 999);
+  BOOST_TEST(src.at("x") == 100);
+}
+
+BOOST_AUTO_TEST_CASE(moveAssignment)
+{
+  HashTable< std::string, int > src;
+  src.insert("a", 1);
+  HashTable< std::string, int > dst;
+  dst.insert("b", 2);
+
+  dst = std::move(src);
+  BOOST_TEST(dst.size() == 1u);
+  BOOST_TEST(dst.at("a") == 1);
+  BOOST_TEST(!dst.contains("b"));
+  BOOST_TEST(src.size() == 0u);
+}
+
 BOOST_AUTO_TEST_CASE(overwriteKeepsCapacity)
 {
   HashTable< int, int > ht(4);
