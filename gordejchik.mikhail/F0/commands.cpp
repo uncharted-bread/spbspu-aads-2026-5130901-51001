@@ -5,6 +5,7 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include "backpack.hpp"
 
 static void fail(std::ostream& out)
@@ -152,11 +153,16 @@ static void configRule(gordejchik::game_config_t& config,
 
 static void printBattleSide(const std::string& deckName,
     const gordejchik::Deck& deck,
-    const gordejchik::BackpackResult& res, std::ostream& out)
+    const gordejchik::BackpackResult& res, int bonus, bool showBonus,
+    std::ostream& out)
 {
   out << "=== " << deckName << " ===" << "\n";
   printBackpackCards(deck, res, out);
-  out << "TOTAL POWER: " << res.totalPower() << "\n";
+  if (showBonus) {
+    out << "BASE POWER: " << res.totalPower() << "\n";
+    out << "TYPE BONUS: +" << bonus << "\n";
+  }
+  out << "TOTAL POWER: " << (res.totalPower() + bonus) << "\n";
 }
 
 gordejchik::ParsedCommand gordejchik::parseLine(
@@ -561,7 +567,7 @@ void gordejchik::cmdOptimize(DeckStore& decks, game_config_t&,
   std::cerr << "Created deck '" << newDeckName << "'" << "\n";
 }
 
-void gordejchik::cmdBattle(DeckStore& decks, game_config_t&,
+void gordejchik::cmdBattle(DeckStore& decks, game_config_t& config,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 4) {
@@ -591,11 +597,14 @@ void gordejchik::cmdBattle(DeckStore& decks, game_config_t&,
   Deck& deck2 = it2->second;
   BackpackResult res1 = solveDeck(deck1, budget);
   BackpackResult res2 = solveDeck(deck2, budget);
-  printBattleSide(deck1Name, deck1, res1, out);
-  printBattleSide(deck2Name, deck2, res2, out);
-  if (res1.totalPower() > res2.totalPower()) {
+  const std::pair< int, int > bonuses = computeTypeBonuses(res1, res2, config);
+  printBattleSide(deck1Name, deck1, res1, bonuses.first, config.bonusEnabled, out);
+  printBattleSide(deck2Name, deck2, res2, bonuses.second, config.bonusEnabled, out);
+  const int total1 = res1.totalPower() + bonuses.first;
+  const int total2 = res2.totalPower() + bonuses.second;
+  if (total1 > total2) {
     out << "WINNER: " << deck1Name << "\n";
-  } else if (res2.totalPower() > res1.totalPower()) {
+  } else if (total2 > total1) {
     out << "WINNER: " << deck2Name << "\n";
   } else {
     out << "DRAW" << "\n";
