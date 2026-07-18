@@ -257,3 +257,71 @@ BOOST_AUTO_TEST_CASE(emptyTypeRejected)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(ConfigAnalyzeSuite)
+
+BOOST_AUTO_TEST_CASE(analyzeWithoutRules)
+{
+  DeckStore decks;
+  gordejchik::game_config_t config{false, gordejchik::DEFAULT_BONUS_VALUE, {}};
+  std::ostringstream out;
+  gordejchik::cmdConfig(decks, config, parseLine("config analyze"), out);
+
+  BOOST_TEST(out.str() == "No rules to analyze\n");
+}
+
+BOOST_AUTO_TEST_CASE(analyzeRanksAcyclicRules)
+{
+  DeckStore decks;
+  gordejchik::game_config_t config{false, gordejchik::DEFAULT_BONUS_VALUE, {}};
+  std::ostringstream out;
+  gordejchik::cmdConfig(decks, config, parseLine("config rule Demon Beast"), out);
+  gordejchik::cmdConfig(decks, config, parseLine("config rule Beast Machine"), out);
+  gordejchik::cmdConfig(decks, config, parseLine("config analyze"), out);
+
+  const std::string expected =
+      "Type ranking:\n"
+      "  1. Demon\n"
+      "  2. Beast\n"
+      "  3. Machine\n";
+  BOOST_TEST(out.str() == expected);
+}
+
+BOOST_AUTO_TEST_CASE(analyzeReportsCycle)
+{
+  DeckStore decks;
+  gordejchik::game_config_t config{false, gordejchik::DEFAULT_BONUS_VALUE, {}};
+  std::ostringstream out;
+  gordejchik::cmdConfig(decks, config, parseLine("config rule Demon Beast"), out);
+  gordejchik::cmdConfig(decks, config, parseLine("config rule Beast Demon"), out);
+  gordejchik::cmdConfig(decks, config, parseLine("config analyze"), out);
+
+  const std::string text = out.str();
+  BOOST_TEST(text.substr(0, 7) == "Cycle: ");
+  BOOST_TEST(text.find("Demon") != std::string::npos);
+  BOOST_TEST(text.find("Beast") != std::string::npos);
+}
+
+BOOST_AUTO_TEST_CASE(dominatesListsChain)
+{
+  DeckStore decks;
+  gordejchik::game_config_t config{false, gordejchik::DEFAULT_BONUS_VALUE, {}};
+  std::ostringstream out;
+  gordejchik::cmdConfig(decks, config, parseLine("config rule Demon Beast"), out);
+  gordejchik::cmdConfig(decks, config, parseLine("config rule Beast Machine"), out);
+  gordejchik::cmdConfig(decks, config, parseLine("config dominates Demon"), out);
+
+  BOOST_TEST(out.str() == "Demon dominates: Beast Machine\n");
+}
+
+BOOST_AUTO_TEST_CASE(dominatesUnknownType)
+{
+  DeckStore decks;
+  gordejchik::game_config_t config{false, gordejchik::DEFAULT_BONUS_VALUE, {}};
+  std::ostringstream out;
+  gordejchik::cmdConfig(decks, config, parseLine("config dominates Ghost"), out);
+
+  BOOST_TEST(out.str() == "Ghost dominates nothing\n");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
