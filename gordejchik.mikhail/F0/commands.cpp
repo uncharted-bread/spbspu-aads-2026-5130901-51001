@@ -233,6 +233,52 @@ static void printBattleSide(const std::string& deckName,
   out << "TOTAL POWER: " << (res.totalPower() + bonus) << "\n";
 }
 
+static void writeDeck(std::ostream& file, const gordejchik::Deck& deck)
+{
+  using gordejchik::Card;
+  using gordejchik::Deck;
+  file << deck.size() << "\n";
+  for (Deck::ConstIterator it = deck.cbegin(); it != deck.cend(); ++it) {
+    const Card& card = it->second;
+    file << card.name << "\n";
+    file << card.power << " " << card.cost << "\n";
+    file << card.type << "\n";
+    file << card.description << "\n";
+  }
+}
+
+static void readDeckCards(std::istream& file, gordejchik::Deck& deck)
+{
+  using gordejchik::Card;
+  size_t count = 0;
+  if (!(file >> count)) {
+    throw std::invalid_argument("Bad card count");
+  }
+  file.ignore(std::numeric_limits< std::streamsize >::max(), '\n');
+  for (size_t i = 0; i < count; ++i) {
+    std::string cardName;
+    std::string stats;
+    if (!std::getline(file, cardName) || !std::getline(file, stats)) {
+      throw std::invalid_argument("Truncated card record");
+    }
+    const size_t space = stats.find(' ');
+    if (space == std::string::npos) {
+      throw std::invalid_argument("Bad card stats");
+    }
+    const int power = parseInt(stats.substr(0, space));
+    const int cost = parseInt(stats.substr(space + 1));
+    if (cost < 0) {
+      throw std::invalid_argument("Negative card cost");
+    }
+    std::string type;
+    std::string desc;
+    if (!std::getline(file, type) || !std::getline(file, desc)) {
+      throw std::invalid_argument("Truncated card record");
+    }
+    deck.insert(cardName, Card{cardName, power, cost, type, desc});
+  }
+}
+
 gordejchik::ParsedCommand gordejchik::parseLine(
     const std::string& line)
 {
@@ -742,14 +788,7 @@ void gordejchik::cmdSave(DeckStore& decks, game_config_t&,
     fail(out);
     return;
   }
-  file << deck.size() << "\n";
-  for (Deck::ConstIterator it = deck.cbegin(); it != deck.cend(); ++it) {
-    const Card& card = it->second;
-    file << card.name << "\n";
-    file << card.power << " " << card.cost << "\n";
-    file << card.type << "\n";
-    file << card.description << "\n";
-  }
+  writeDeck(file, deck);
   std::cerr << "Deck saved to '" << filename << "'" << "\n";
 }
 
@@ -771,45 +810,12 @@ void gordejchik::cmdLoad(DeckStore& decks, game_config_t&,
     fail(out);
     return;
   }
-  size_t count = 0;
-  if (!(file >> count)) {
+  Deck deck;
+  try {
+    readDeckCards(file, deck);
+  } catch (const std::exception&) {
     fail(out);
     return;
-  }
-  file.ignore(std::numeric_limits< std::streamsize >::max(), '\n');
-  Deck deck;
-  for (size_t i = 0; i < count; ++i) {
-    std::string cardName;
-    std::string stats;
-    if (!std::getline(file, cardName) || !std::getline(file, stats)) {
-      fail(out);
-      return;
-    }
-    const size_t space = stats.find(' ');
-    if (space == std::string::npos) {
-      fail(out);
-      return;
-    }
-    int power = 0;
-    int cost = 0;
-    try {
-      power = parseInt(stats.substr(0, space));
-      cost = parseInt(stats.substr(space + 1));
-    } catch (const std::exception&) {
-      fail(out);
-      return;
-    }
-    if (cost < 0) {
-      fail(out);
-      return;
-    }
-    std::string type;
-    std::string desc;
-    if (!std::getline(file, type) || !std::getline(file, desc)) {
-      fail(out);
-      return;
-    }
-    deck.insert(cardName, Card{cardName, power, cost, type, desc});
   }
   decks.insert(deckName, deck);
   std::cerr << "Deck loaded from '" << filename << "'" << "\n";
