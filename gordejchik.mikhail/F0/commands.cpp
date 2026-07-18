@@ -279,6 +279,31 @@ static void readDeckCards(std::istream& file, gordejchik::Deck& deck)
   }
 }
 
+static void saveSession(const gordejchik::DeckStore& decks,
+    const gordejchik::game_config_t& config, const std::string& filename,
+    std::ostream& out)
+{
+  using gordejchik::DeckStore;
+  using gordejchik::GameRules;
+  std::ofstream file(filename);
+  if (!file.is_open()) {
+    fail(out);
+    return;
+  }
+  file << "SESSION" << "\n";
+  file << (config.bonusEnabled ? "on" : "off") << " " << config.bonusValue << "\n";
+  file << config.rules.size() << "\n";
+  for (GameRules::ConstIterator it = config.rules.cbegin(); it != config.rules.cend(); ++it) {
+    file << it->first << "\n";
+  }
+  file << decks.size() << "\n";
+  for (DeckStore::ConstIterator it = decks.cbegin(); it != decks.cend(); ++it) {
+    file << it->first << "\n";
+    writeDeck(file, it->second);
+  }
+  std::cerr << "Session saved to '" << filename << "'" << "\n";
+}
+
 gordejchik::ParsedCommand gordejchik::parseLine(
     const std::string& line)
 {
@@ -383,6 +408,8 @@ void gordejchik::cmdHelp(DeckStore&, game_config_t&,
       << "- compare two decks with type bonuses" << "\n";
   out << "save <deck> <filename>                    "
       << "- save deck to file" << "\n";
+  out << "save <filename>                           "
+      << "- save whole session to file" << "\n";
   out << "load <deck> <filename>                    "
       << "- load deck from file" << "\n";
   out << "trade <deck-1> <deck-2> <card-1> <card-2> "
@@ -768,9 +795,13 @@ void gordejchik::cmdMerge(DeckStore& decks, game_config_t&,
   std::cerr << "Decks merged into '" << newName << "'" << "\n";
 }
 
-void gordejchik::cmdSave(DeckStore& decks, game_config_t&,
+void gordejchik::cmdSave(DeckStore& decks, game_config_t& config,
     const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count == 2) {
+    saveSession(decks, config, cmd.tokens[1], out);
+    return;
+  }
   if (cmd.count != 3) {
     fail(out);
     return;
