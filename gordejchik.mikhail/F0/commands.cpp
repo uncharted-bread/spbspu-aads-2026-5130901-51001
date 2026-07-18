@@ -80,6 +80,37 @@ static gordejchik::BackpackResult solveDeck(
   return res;
 }
 
+static void printConfig(const gordejchik::game_config_t& config,
+    std::ostream& out)
+{
+  using gordejchik::GameRules;
+  out << "Type bonuses: " << (config.bonusEnabled ? "ON" : "OFF") << "\n";
+  out << "Bonus value: " << config.bonusValue << "\n";
+  out << "Rules:" << "\n";
+  const size_t count = config.rules.size();
+  if (count == 0) {
+    return;
+  }
+  std::string* keys = new std::string[count];
+  try {
+    size_t idx = 0;
+    for (GameRules::ConstIterator it = config.rules.cbegin(); it != config.rules.cend(); ++it) {
+      keys[idx] = it->first;
+      ++idx;
+    }
+    std::sort(keys, keys + count);
+    for (size_t i = 0; i < count; ++i) {
+      const size_t sep = keys[i].find('>');
+      out << "  " << keys[i].substr(0, sep)
+          << " > " << keys[i].substr(sep + 1) << "\n";
+    }
+  } catch (...) {
+    delete[] keys;
+    throw;
+  }
+  delete[] keys;
+}
+
 static void printBattleSide(const std::string& deckName,
     const gordejchik::Deck& deck,
     const gordejchik::BackpackResult& res, std::ostream& out)
@@ -128,7 +159,7 @@ gordejchik::ParsedCommand gordejchik::parseLine(
   return result;
 }
 
-void gordejchik::cmdCreate(DeckStore& decks,
+void gordejchik::cmdCreate(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 2) {
@@ -144,7 +175,7 @@ void gordejchik::cmdCreate(DeckStore& decks,
   std::cerr << "Deck '" << name << "' created" << "\n";
 }
 
-void gordejchik::cmdDelete(DeckStore& decks,
+void gordejchik::cmdDelete(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 2) {
@@ -160,7 +191,7 @@ void gordejchik::cmdDelete(DeckStore& decks,
   std::cerr << "Deck '" << name << "' deleted" << "\n";
 }
 
-void gordejchik::cmdHelp(DeckStore&,
+void gordejchik::cmdHelp(DeckStore&, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 1) {
@@ -197,11 +228,13 @@ void gordejchik::cmdHelp(DeckStore&,
       << "- load deck from file" << "\n";
   out << "trade <deck-1> <deck-2> <card-1> <card-2>"
       << " - swap two cards between decks" << "\n";
+  out << "config                               "
+      << "- show type bonus settings" << "\n";
   out << "help                                 "
       << "- list commands" << "\n";
 }
 
-void gordejchik::cmdAdd(DeckStore& decks,
+void gordejchik::cmdAdd(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 5) {
@@ -237,7 +270,7 @@ void gordejchik::cmdAdd(DeckStore& decks,
   std::cerr << "Card '" << cardName << "' added to '" << deckName << "'" << "\n";
 }
 
-void gordejchik::cmdRemove(DeckStore& decks,
+void gordejchik::cmdRemove(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 3) {
@@ -260,7 +293,7 @@ void gordejchik::cmdRemove(DeckStore& decks,
   std::cerr << "Card '" << cardName << "' removed from '" << deckName << "'" << "\n";
 }
 
-void gordejchik::cmdShow(DeckStore& decks,
+void gordejchik::cmdShow(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 2) {
@@ -294,7 +327,7 @@ void gordejchik::cmdShow(DeckStore& decks,
   delete[] names;
 }
 
-void gordejchik::cmdInfo(DeckStore& decks,
+void gordejchik::cmdInfo(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 3) {
@@ -340,7 +373,7 @@ void gordejchik::cmdInfo(DeckStore& decks,
   out << footer << "\n";
 }
 
-void gordejchik::cmdSetType(DeckStore& decks,
+void gordejchik::cmdSetType(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 4) {
@@ -363,7 +396,7 @@ void gordejchik::cmdSetType(DeckStore& decks,
   std::cerr << "Type of card '" << cardName << "' set" << "\n";
 }
 
-void gordejchik::cmdSetDesc(DeckStore& decks,
+void gordejchik::cmdSetDesc(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 4) {
@@ -386,7 +419,7 @@ void gordejchik::cmdSetDesc(DeckStore& decks,
   std::cerr << "Description of card '" << cardName << "' set" << "\n";
 }
 
-void gordejchik::cmdRange(DeckStore& decks,
+void gordejchik::cmdRange(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 5) {
@@ -444,7 +477,7 @@ void gordejchik::cmdRange(DeckStore& decks,
   delete[] names;
 }
 
-void gordejchik::cmdOptimize(DeckStore& decks,
+void gordejchik::cmdOptimize(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 3 && cmd.count != 4) {
@@ -489,7 +522,7 @@ void gordejchik::cmdOptimize(DeckStore& decks,
   std::cerr << "Created deck '" << newDeckName << "'" << "\n";
 }
 
-void gordejchik::cmdBattle(DeckStore& decks,
+void gordejchik::cmdBattle(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 4) {
@@ -530,7 +563,7 @@ void gordejchik::cmdBattle(DeckStore& decks,
   }
 }
 
-void gordejchik::cmdMerge(DeckStore& decks,
+void gordejchik::cmdMerge(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 4) {
@@ -563,7 +596,7 @@ void gordejchik::cmdMerge(DeckStore& decks,
   std::cerr << "Decks merged into '" << newName << "'" << "\n";
 }
 
-void gordejchik::cmdSave(DeckStore& decks,
+void gordejchik::cmdSave(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 3) {
@@ -594,7 +627,7 @@ void gordejchik::cmdSave(DeckStore& decks,
   std::cerr << "Deck saved to '" << filename << "'" << "\n";
 }
 
-void gordejchik::cmdLoad(DeckStore& decks,
+void gordejchik::cmdLoad(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 3) {
@@ -656,7 +689,7 @@ void gordejchik::cmdLoad(DeckStore& decks,
   std::cerr << "Deck loaded from '" << filename << "'" << "\n";
 }
 
-void gordejchik::cmdTrade(DeckStore& decks,
+void gordejchik::cmdTrade(DeckStore& decks, game_config_t&,
     const ParsedCommand& cmd, std::ostream& out)
 {
   if (cmd.count != 5) {
@@ -706,6 +739,16 @@ void gordejchik::cmdTrade(DeckStore& decks,
   std::cerr << "Card '" << card1Name << "' traded for '" << card2Name << "'" << "\n";
 }
 
+void gordejchik::cmdConfig(DeckStore&, game_config_t& config,
+    const ParsedCommand& cmd, std::ostream& out)
+{
+  if (cmd.count == 1) {
+    printConfig(config, out);
+    return;
+  }
+  fail(out);
+}
+
 gordejchik::HashTable< std::string, gordejchik::CommandHandler >
 gordejchik::makeCommandTable()
 {
@@ -726,5 +769,6 @@ gordejchik::makeCommandTable()
   table.insert("save", cmdSave);
   table.insert("load", cmdLoad);
   table.insert("trade", cmdTrade);
+  table.insert("config", cmdConfig);
   return table;
 }
