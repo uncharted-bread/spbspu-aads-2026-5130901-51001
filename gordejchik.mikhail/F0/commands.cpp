@@ -243,39 +243,45 @@ void gordejchik::cmdHelp(DeckStore&, game_config_t&,
     fail(out);
     return;
   }
-  out << "create <deck>                        "
+  out << "create <deck>                             "
       << "- create an empty deck" << "\n";
-  out << "delete <deck>                        "
+  out << "delete <deck>                             "
       << "- delete a deck" << "\n";
-  out << "add <deck> <card> <power> <cost>     "
+  out << "add <deck> <card> <power> <cost>          "
       << "- add a card" << "\n";
-  out << "remove <deck> <card>                 "
+  out << "remove <deck> <card>                      "
       << "- remove a card" << "\n";
-  out << "set-type <deck> <card> <type>        "
+  out << "set-type <deck> <card> <type>             "
       << "- set card type" << "\n";
-  out << "set-desc <deck> <card> <text>        "
+  out << "set-desc <deck> <card> <text>             "
       << "- set card description" << "\n";
-  out << "show <deck>                          "
+  out << "show <deck>                               "
       << "- show all cards" << "\n";
-  out << "info <deck> <card>                   "
+  out << "info <deck> <card>                        "
       << "- full card info" << "\n";
-  out << "range <deck> <stat> <min> <max>      "
+  out << "range <deck> <stat> <min> <max>           "
       << "- filter by stat range" << "\n";
-  out << "merge <new-deck> <deck-1> <deck-2>   "
+  out << "merge <new-deck> <deck-1> <deck-2>        "
       << "- merge two decks" << "\n";
-  out << "optimize <deck> <budget> [<new-deck>]"
-      << " - pick cards (knapsack)" << "\n";
-  out << "battle <deck-1> <deck-2> <budget>    "
-      << "- compare two decks" << "\n";
-  out << "save <deck> <filename>               "
+  out << "optimize <deck> <budget> [<new-deck>]     "
+      << "- pick cards (knapsack)" << "\n";
+  out << "battle <deck-1> <deck-2> <budget>         "
+      << "- compare two decks with type bonuses" << "\n";
+  out << "save <deck> <filename>                    "
       << "- save deck to file" << "\n";
-  out << "load <deck> <filename>               "
+  out << "load <deck> <filename>                    "
       << "- load deck from file" << "\n";
-  out << "trade <deck-1> <deck-2> <card-1> <card-2>"
-      << " - swap two cards between decks" << "\n";
-  out << "config                               "
+  out << "trade <deck-1> <deck-2> <card-1> <card-2> "
+      << "- swap two cards between decks" << "\n";
+  out << "config                                    "
       << "- show type bonus settings" << "\n";
-  out << "help                                 "
+  out << "config bonus <value>|on|off               "
+      << "- set bonus value or toggle bonuses" << "\n";
+  out << "config rule <type-a> <type-b>             "
+      << "- make type-a dominate type-b" << "\n";
+  out << "config clear-rules                        "
+      << "- delete all dominance rules" << "\n";
+  out << "help                                      "
       << "- list commands" << "\n";
 }
 
