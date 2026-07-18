@@ -183,6 +183,42 @@ static void configAnalyze(const gordejchik::game_config_t& config, std::ostream&
   delete[] buffer;
 }
 
+static void configDominates(const gordejchik::game_config_t& config,
+    const std::string& type, std::ostream& out)
+{
+  const gordejchik::RuleGraph graph(config.rules);
+  const size_t count = graph.vertexCount();
+  size_t found = 0;
+  size_t* indices = nullptr;
+  std::string* names = nullptr;
+  try {
+    if (count > 0) {
+      indices = new size_t[count];
+      found = graph.reachableFrom(type, indices);
+    }
+    if (found == 0) {
+      out << type << " dominates nothing" << "\n";
+    } else {
+      names = new std::string[found];
+      for (size_t i = 0; i < found; ++i) {
+        names[i] = graph.vertexName(indices[i]);
+      }
+      std::sort(names, names + found);
+      out << type << " dominates:";
+      for (size_t i = 0; i < found; ++i) {
+        out << " " << names[i];
+      }
+      out << "\n";
+    }
+  } catch (...) {
+    delete[] indices;
+    delete[] names;
+    throw;
+  }
+  delete[] indices;
+  delete[] names;
+}
+
 static void printBattleSide(const std::string& deckName,
     const gordejchik::Deck& deck,
     const gordejchik::BackpackResult& res, int bonus, bool showBonus,
@@ -315,6 +351,8 @@ void gordejchik::cmdHelp(DeckStore&, game_config_t&,
       << "- delete all dominance rules" << "\n";
   out << "config analyze                            "
       << "- find rule cycles or rank types" << "\n";
+  out << "config dominates <type>                   "
+      << "- list types beaten via rule chains" << "\n";
   out << "help                                      "
       << "- list commands" << "\n";
 }
@@ -850,6 +888,10 @@ void gordejchik::cmdConfig(DeckStore&, game_config_t& config,
   }
   if (sub == "analyze" && cmd.count == 2) {
     configAnalyze(config, out);
+    return;
+  }
+  if (sub == "dominates" && cmd.count == 3) {
+    configDominates(config, cmd.tokens[2], out);
     return;
   }
   fail(out);
