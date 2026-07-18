@@ -2,6 +2,8 @@
 #define GAMECONFIG_HPP
 
 #include <string>
+#include <utility>
+#include "backpack.hpp"
 #include "hashtable.hpp"
 
 namespace gordejchik {
@@ -16,6 +18,9 @@ namespace gordejchik {
     int bonusValue;
     GameRules rules;
   };
+
+  std::pair< int, int > computeTypeBonuses(const BackpackResult& side1,
+      const BackpackResult& side2, const game_config_t& config);
 }
 
 #endif
