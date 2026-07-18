@@ -39,6 +39,7 @@ namespace gordejchik {
   void cmdMerge(DeckStore& decks, const ParsedCommand& cmd, std::ostream& out);
   void cmdSave(DeckStore& decks, const ParsedCommand& cmd, std::ostream& out);
   void cmdLoad(DeckStore& decks, const ParsedCommand& cmd, std::ostream& out);
+  void cmdTrade(DeckStore& decks, const ParsedCommand& cmd, std::ostream& out);
 
 }
 

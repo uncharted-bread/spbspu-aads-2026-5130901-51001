@@ -195,6 +195,8 @@ void gordejchik::cmdHelp(DeckStore&,
       << "- save deck to file" << "\n";
   out << "load <deck> <filename>               "
       << "- load deck from file" << "\n";
+  out << "trade <deck-1> <deck-2> <card-1> <card-2>"
+      << " - swap two cards between decks" << "\n";
   out << "help                                 "
       << "- list commands" << "\n";
 }
@@ -654,6 +656,56 @@ void gordejchik::cmdLoad(DeckStore& decks,
   std::cerr << "Deck loaded from '" << filename << "'" << "\n";
 }
 
+void gordejchik::cmdTrade(DeckStore& decks,
+    const ParsedCommand& cmd, std::ostream& out)
+{
+  if (cmd.count != 5) {
+    fail(out);
+    return;
+  }
+  const std::string& deck1Name = cmd.tokens[1];
+  const std::string& deck2Name = cmd.tokens[2];
+  const std::string& card1Name = cmd.tokens[3];
+  const std::string& card2Name = cmd.tokens[4];
+  DeckStore::Iterator it1 = decks.find(deck1Name);
+  DeckStore::Iterator it2 = decks.find(deck2Name);
+  if (it1 == decks.end() || it2 == decks.end()) {
+    fail(out);
+    return;
+  }
+  Deck& deck1 = it1->second;
+  Deck& deck2 = it2->second;
+  if (!deck1.contains(card1Name) || !deck2.contains(card2Name)) {
+    fail(out);
+    return;
+  }
+  const bool sameDeck = (deck1Name == deck2Name);
+  if (sameDeck && card1Name == card2Name) {
+    fail(out);
+    return;
+  }
+  if (!sameDeck && (deck2.contains(card1Name) || deck1.contains(card2Name))) {
+    fail(out);
+    return;
+  }
+  const Card card1 = deck1.at(card1Name);
+  const Card card2 = deck2.at(card2Name);
+  deck1.erase(card1Name);
+  deck2.erase(card2Name);
+  try {
+    deck2.insert(card1Name, card1);
+    deck1.insert(card2Name, card2);
+  } catch (...) {
+    if (deck2.contains(card1Name)) {
+      deck2.erase(card1Name);
+    }
+    deck1.insert(card1Name, card1);
+    deck2.insert(card2Name, card2);
+    throw;
+  }
+  std::cerr << "Card '" << card1Name << "' traded for '" << card2Name << "'" << "\n";
+}
+
 gordejchik::HashTable< std::string, gordejchik::CommandHandler >
 gordejchik::makeCommandTable()
 {
@@ -673,5 +725,6 @@ gordejchik::makeCommandTable()
   table.insert("merge", cmdMerge);
   table.insert("save", cmdSave);
   table.insert("load", cmdLoad);
+  table.insert("trade", cmdTrade);
   return table;
 }
