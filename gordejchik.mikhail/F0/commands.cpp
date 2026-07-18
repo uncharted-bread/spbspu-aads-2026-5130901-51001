@@ -304,6 +304,94 @@ static void saveSession(const gordejchik::DeckStore& decks,
   std::cerr << "Session saved to '" << filename << "'" << "\n";
 }
 
+static void readSessionRules(std::istream& file, gordejchik::GameRules& rules)
+{
+  size_t ruleCount = 0;
+  if (!(file >> ruleCount)) {
+    throw std::invalid_argument("Bad rule count");
+  }
+  file.ignore(std::numeric_limits< std::streamsize >::max(), '\n');
+  for (size_t i = 0; i < ruleCount; ++i) {
+    std::string key;
+    if (!std::getline(file, key)) {
+      throw std::invalid_argument("Truncated rule list");
+    }
+    const size_t sep = key.find('>');
+    if (sep == std::string::npos) {
+      throw std::invalid_argument("Bad rule format");
+    }
+    const std::string typeA = key.substr(0, sep);
+    const std::string typeB = key.substr(sep + 1);
+    if (typeA.empty() || typeB.empty() || typeA == typeB) {
+      throw std::invalid_argument("Bad rule types");
+    }
+    rules.insert(key, true);
+  }
+}
+
+static void readSessionDecks(std::istream& file, gordejchik::DeckStore& decks)
+{
+  using gordejchik::Deck;
+  size_t deckCount = 0;
+  if (!(file >> deckCount)) {
+    throw std::invalid_argument("Bad deck count");
+  }
+  file.ignore(std::numeric_limits< std::streamsize >::max(), '\n');
+  for (size_t i = 0; i < deckCount; ++i) {
+    std::string name;
+    if (!std::getline(file, name) || name.empty()) {
+      throw std::invalid_argument("Bad deck name");
+    }
+    if (decks.contains(name)) {
+      throw std::invalid_argument("Duplicate deck name");
+    }
+    Deck deck;
+    readDeckCards(file, deck);
+    decks.insert(name, deck);
+  }
+}
+
+static void loadSession(gordejchik::DeckStore& decks,
+    gordejchik::game_config_t& config, const std::string& filename,
+    std::ostream& out)
+{
+  using gordejchik::DeckStore;
+  using gordejchik::GameRules;
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    fail(out);
+    return;
+  }
+  bool enabled = false;
+  int value = 0;
+  GameRules rules;
+  DeckStore loaded;
+  try {
+    std::string marker;
+    if (!std::getline(file, marker) || marker != "SESSION") {
+      throw std::invalid_argument("Not a session file");
+    }
+    std::string flag;
+    if (!(file >> flag >> value) || value < 0) {
+      throw std::invalid_argument("Bad session header");
+    }
+    if (flag != "on" && flag != "off") {
+      throw std::invalid_argument("Bad session header");
+    }
+    enabled = (flag == "on");
+    readSessionRules(file, rules);
+    readSessionDecks(file, loaded);
+  } catch (const std::exception&) {
+    fail(out);
+    return;
+  }
+  decks = std::move(loaded);
+  config.bonusEnabled = enabled;
+  config.bonusValue = value;
+  config.rules = std::move(rules);
+  std::cerr << "Session loaded from '" << filename << "'" << "\n";
+}
+
 gordejchik::ParsedCommand gordejchik::parseLine(
     const std::string& line)
 {
@@ -412,6 +500,8 @@ void gordejchik::cmdHelp(DeckStore&, game_config_t&,
       << "- save whole session to file" << "\n";
   out << "load <deck> <filename>                    "
       << "- load deck from file" << "\n";
+  out << "load <filename>                           "
+      << "- load session from file" << "\n";
   out << "trade <deck-1> <deck-2> <card-1> <card-2> "
       << "- swap two cards between decks" << "\n";
   out << "config                                    "
@@ -823,9 +913,13 @@ void gordejchik::cmdSave(DeckStore& decks, game_config_t& config,
   std::cerr << "Deck saved to '" << filename << "'" << "\n";
 }
 
-void gordejchik::cmdLoad(DeckStore& decks, game_config_t&,
+void gordejchik::cmdLoad(DeckStore& decks, game_config_t& config,
     const ParsedCommand& cmd, std::ostream& out)
 {
+  if (cmd.count == 2) {
+    loadSession(decks, config, cmd.tokens[1], out);
+    return;
+  }
   if (cmd.count != 3) {
     fail(out);
     return;
