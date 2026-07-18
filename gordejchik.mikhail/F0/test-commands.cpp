@@ -115,3 +115,115 @@ BOOST_AUTO_TEST_CASE(loadRejectsNegativeCost)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+static DeckStore makeTradeStore()
+{
+  DeckStore decks;
+  std::ostringstream out;
+  gordejchik::cmdCreate(decks, parseLine("create alpha"), out);
+  gordejchik::cmdCreate(decks, parseLine("create beta"), out);
+  gordejchik::cmdAdd(decks, parseLine("add alpha sword 10 3"), out);
+  gordejchik::cmdAdd(decks, parseLine("add alpha bow 7 2"), out);
+  gordejchik::cmdAdd(decks, parseLine("add beta axe 8 2"), out);
+  gordejchik::cmdSetType(decks, parseLine("set-type alpha sword Blade"), out);
+  return decks;
+}
+
+BOOST_AUTO_TEST_SUITE(TradeSuite)
+
+BOOST_AUTO_TEST_CASE(swapsCardsBetweenDecks)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdTrade(decks, parseLine("trade alpha beta sword axe"), out);
+
+  BOOST_TEST(out.str().empty());
+  BOOST_TEST(!decks.at("alpha").contains("sword"));
+  BOOST_TEST(decks.at("alpha").contains("axe"));
+  BOOST_TEST(!decks.at("beta").contains("axe"));
+  BOOST_REQUIRE(decks.at("beta").contains("sword"));
+  BOOST_TEST(decks.at("beta").at("sword").power == 10);
+  BOOST_TEST(decks.at("beta").at("sword").cost == 3);
+  BOOST_TEST(decks.at("beta").at("sword").type == "Blade");
+}
+
+BOOST_AUTO_TEST_CASE(missingDeckRejected)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdTrade(decks, parseLine("trade nosuch beta sword axe"), out);
+  gordejchik::cmdTrade(decks, parseLine("trade alpha nosuch sword axe"), out);
+
+  BOOST_TEST(out.str() == "<INVALID COMMAND>\n<INVALID COMMAND>\n");
+  BOOST_TEST(decks.at("alpha").contains("sword"));
+  BOOST_TEST(decks.at("beta").contains("axe"));
+}
+
+BOOST_AUTO_TEST_CASE(missingCardRejected)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdTrade(decks, parseLine("trade alpha beta nosuch axe"), out);
+  gordejchik::cmdTrade(decks, parseLine("trade alpha beta sword nosuch"), out);
+
+  BOOST_TEST(out.str() == "<INVALID COMMAND>\n<INVALID COMMAND>\n");
+  BOOST_TEST(decks.at("alpha").contains("sword"));
+  BOOST_TEST(decks.at("beta").contains("axe"));
+}
+
+BOOST_AUTO_TEST_CASE(nameCollisionInTargetRejected)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdAdd(decks, parseLine("add beta sword 1 1"), out);
+  gordejchik::cmdTrade(decks, parseLine("trade alpha beta sword axe"), out);
+
+  BOOST_TEST(out.str() == "<INVALID COMMAND>\n");
+  BOOST_TEST(decks.at("alpha").contains("sword"));
+  BOOST_TEST(decks.at("beta").contains("axe"));
+}
+
+BOOST_AUTO_TEST_CASE(nameCollisionInSourceRejected)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdAdd(decks, parseLine("add alpha axe 1 1"), out);
+  gordejchik::cmdTrade(decks, parseLine("trade alpha beta sword axe"), out);
+
+  BOOST_TEST(out.str() == "<INVALID COMMAND>\n");
+  BOOST_TEST(decks.at("alpha").contains("sword"));
+  BOOST_TEST(decks.at("beta").contains("axe"));
+}
+
+BOOST_AUTO_TEST_CASE(sameDeckSwapKeepsCards)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdTrade(decks, parseLine("trade alpha alpha sword bow"), out);
+
+  BOOST_TEST(out.str().empty());
+  BOOST_TEST(decks.at("alpha").size() == 2u);
+  BOOST_TEST(decks.at("alpha").contains("sword"));
+  BOOST_TEST(decks.at("alpha").contains("bow"));
+}
+
+BOOST_AUTO_TEST_CASE(sameDeckSameCardRejected)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdTrade(decks, parseLine("trade alpha alpha sword sword"), out);
+
+  BOOST_TEST(out.str() == "<INVALID COMMAND>\n");
+  BOOST_TEST(decks.at("alpha").contains("sword"));
+}
+
+BOOST_AUTO_TEST_CASE(wrongArgumentCountRejected)
+{
+  DeckStore decks = makeTradeStore();
+  std::ostringstream out;
+  gordejchik::cmdTrade(decks, parseLine("trade alpha beta sword"), out);
+
+  BOOST_TEST(out.str() == "<INVALID COMMAND>\n");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
