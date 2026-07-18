@@ -111,6 +111,34 @@ static void printConfig(const gordejchik::game_config_t& config,
   delete[] keys;
 }
 
+static void configBonus(gordejchik::game_config_t& config,
+    const std::string& arg, std::ostream& out)
+{
+  if (arg == "on") {
+    config.bonusEnabled = true;
+    std::cerr << "Type bonuses enabled" << "\n";
+    return;
+  }
+  if (arg == "off") {
+    config.bonusEnabled = false;
+    std::cerr << "Type bonuses disabled" << "\n";
+    return;
+  }
+  int value = 0;
+  try {
+    value = parseInt(arg);
+  } catch (const std::exception&) {
+    fail(out);
+    return;
+  }
+  if (value < 0) {
+    fail(out);
+    return;
+  }
+  config.bonusValue = value;
+  std::cerr << "Bonus value set to " << value << "\n";
+}
+
 static void printBattleSide(const std::string& deckName,
     const gordejchik::Deck& deck,
     const gordejchik::BackpackResult& res, std::ostream& out)
@@ -744,6 +772,11 @@ void gordejchik::cmdConfig(DeckStore&, game_config_t& config,
 {
   if (cmd.count == 1) {
     printConfig(config, out);
+    return;
+  }
+  const std::string& sub = cmd.tokens[1];
+  if (sub == "bonus" && cmd.count == 3) {
+    configBonus(config, cmd.tokens[2], out);
     return;
   }
   fail(out);
