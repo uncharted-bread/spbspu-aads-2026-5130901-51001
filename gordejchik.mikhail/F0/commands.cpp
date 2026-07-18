@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <utility>
 #include "backpack.hpp"
+#include "rulegraph.hpp"
 
 static void fail(std::ostream& out)
 {
@@ -151,6 +152,37 @@ static void configRule(gordejchik::game_config_t& config,
   std::cerr << "Rule '" << typeA << " > " << typeB << "' set" << "\n";
 }
 
+static void configAnalyze(const gordejchik::game_config_t& config, std::ostream& out)
+{
+  const gordejchik::RuleGraph graph(config.rules);
+  const size_t count = graph.vertexCount();
+  if (count == 0) {
+    out << "No rules to analyze" << "\n";
+    return;
+  }
+  size_t* buffer = new size_t[count];
+  try {
+    const size_t cycleLength = graph.findCycle(buffer);
+    if (cycleLength > 0) {
+      out << "Cycle: ";
+      for (size_t i = 0; i < cycleLength; ++i) {
+        out << graph.vertexName(buffer[i]) << " > ";
+      }
+      out << graph.vertexName(buffer[0]) << "\n";
+    } else {
+      graph.topologicalOrder(buffer);
+      out << "Type ranking:" << "\n";
+      for (size_t i = 0; i < count; ++i) {
+        out << "  " << (i + 1) << ". " << graph.vertexName(buffer[i]) << "\n";
+      }
+    }
+  } catch (...) {
+    delete[] buffer;
+    throw;
+  }
+  delete[] buffer;
+}
+
 static void printBattleSide(const std::string& deckName,
     const gordejchik::Deck& deck,
     const gordejchik::BackpackResult& res, int bonus, bool showBonus,
@@ -281,6 +313,8 @@ void gordejchik::cmdHelp(DeckStore&, game_config_t&,
       << "- make type-a dominate type-b" << "\n";
   out << "config clear-rules                        "
       << "- delete all dominance rules" << "\n";
+  out << "config analyze                            "
+      << "- find rule cycles or rank types" << "\n";
   out << "help                                      "
       << "- list commands" << "\n";
 }
@@ -812,6 +846,10 @@ void gordejchik::cmdConfig(DeckStore&, game_config_t& config,
   if (sub == "clear-rules" && cmd.count == 2) {
     config.rules = GameRules();
     std::cerr << "Rules cleared" << "\n";
+    return;
+  }
+  if (sub == "analyze" && cmd.count == 2) {
+    configAnalyze(config, out);
     return;
   }
   fail(out);
