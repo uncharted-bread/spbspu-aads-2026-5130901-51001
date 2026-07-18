@@ -139,6 +139,17 @@ static void configBonus(gordejchik::game_config_t& config,
   std::cerr << "Bonus value set to " << value << "\n";
 }
 
+static void configRule(gordejchik::game_config_t& config,
+    const std::string& typeA, const std::string& typeB, std::ostream& out)
+{
+  if (typeA == typeB) {
+    fail(out);
+    return;
+  }
+  config.rules.insert(typeA + ">" + typeB, true);
+  std::cerr << "Rule '" << typeA << " > " << typeB << "' set" << "\n";
+}
+
 static void printBattleSide(const std::string& deckName,
     const gordejchik::Deck& deck,
     const gordejchik::BackpackResult& res, std::ostream& out)
@@ -777,6 +788,15 @@ void gordejchik::cmdConfig(DeckStore&, game_config_t& config,
   const std::string& sub = cmd.tokens[1];
   if (sub == "bonus" && cmd.count == 3) {
     configBonus(config, cmd.tokens[2], out);
+    return;
+  }
+  if (sub == "rule" && cmd.count == 4) {
+    configRule(config, cmd.tokens[2], cmd.tokens[3], out);
+    return;
+  }
+  if (sub == "clear-rules" && cmd.count == 2) {
+    config.rules = GameRules();
+    std::cerr << "Rules cleared" << "\n";
     return;
   }
   fail(out);
