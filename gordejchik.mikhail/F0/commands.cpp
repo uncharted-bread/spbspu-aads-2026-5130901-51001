@@ -491,7 +491,7 @@ void gordejchik::cmdHelp(DeckStore&, game_config_t&,
   out << "merge <new-deck> <deck-1> <deck-2>        "
       << "- merge two decks" << "\n";
   out << "optimize <deck> <budget> [<new-deck>]     "
-      << "- pick cards (knapsack)" << "\n";
+      << "- pick cards for certain budget" << "\n";
   out << "battle <deck-1> <deck-2> <budget>         "
       << "- compare two decks with type bonuses" << "\n";
   out << "save <deck> <filename>                    "
