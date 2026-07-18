@@ -143,7 +143,7 @@ static void configBonus(gordejchik::game_config_t& config,
 static void configRule(gordejchik::game_config_t& config,
     const std::string& typeA, const std::string& typeB, std::ostream& out)
 {
-  if (typeA == typeB) {
+  if (typeA.empty() || typeB.empty() || typeA == typeB) {
     fail(out);
     return;
   }

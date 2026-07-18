@@ -241,3 +241,19 @@ BOOST_AUTO_TEST_CASE(wrongArgumentCountRejected)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(ConfigRuleSuite)
+
+BOOST_AUTO_TEST_CASE(emptyTypeRejected)
+{
+  DeckStore decks;
+  gordejchik::game_config_t config{false, gordejchik::DEFAULT_BONUS_VALUE, {}};
+  std::ostringstream out;
+  gordejchik::cmdConfig(decks, config, parseLine("config rule \"\" Beast"), out);
+  gordejchik::cmdConfig(decks, config, parseLine("config rule Beast \"\""), out);
+
+  BOOST_TEST(out.str() == "<INVALID COMMAND>\n<INVALID COMMAND>\n");
+  BOOST_TEST(config.rules.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
