@@ -118,6 +118,72 @@ size_t gordejchik::RuleGraph::findCycle(size_t* cycle) const
   return length;
 }
 
+void gordejchik::RuleGraph::topologicalOrder(size_t* order) const
+{
+  if (vertexCount_ == 0) {
+    return;
+  }
+  char* visited = new char[vertexCount_]();
+  size_t filled = 0;
+  for (size_t v = 0; v < vertexCount_; ++v) {
+    if (visited[v] == 0) {
+      dfsOrder(v, visited, order, filled);
+    }
+  }
+  delete[] visited;
+  for (size_t i = 0; i < vertexCount_ / 2; ++i) {
+    std::swap(order[i], order[vertexCount_ - 1 - i]);
+  }
+}
+
+size_t gordejchik::RuleGraph::reachableFrom(const std::string& type,
+    size_t* reachable) const
+{
+  if (!indexOf_.contains(type)) {
+    return 0;
+  }
+  const size_t start = indexOf_.at(type);
+  bool* reached = new bool[vertexCount_]();
+  size_t* stack = nullptr;
+  size_t count = 0;
+  try {
+    stack = new size_t[vertexCount_];
+    size_t top = 0;
+    for (size_t e = offsets_[start]; e < offsets_[start + 1]; ++e) {
+      if (!reached[targets_[e]]) {
+        reached[targets_[e]] = true;
+        stack[top] = targets_[e];
+        ++top;
+      }
+    }
+    while (top > 0) {
+      --top;
+      const size_t vertex = stack[top];
+      for (size_t e = offsets_[vertex]; e < offsets_[vertex + 1]; ++e) {
+        const size_t to = targets_[e];
+        if (!reached[to]) {
+          reached[to] = true;
+          stack[top] = to;
+          ++top;
+        }
+      }
+    }
+    for (size_t v = 0; v < vertexCount_; ++v) {
+      if (reached[v]) {
+        reachable[count] = v;
+        ++count;
+      }
+    }
+  } catch (...) {
+    delete[] reached;
+    delete[] stack;
+    throw;
+  }
+  delete[] reached;
+  delete[] stack;
+  return count;
+}
+
 size_t gordejchik::RuleGraph::dfsCycle(size_t vertex, char* colors, size_t* path,
     size_t depth, size_t* cycle) const
 {
@@ -146,4 +212,17 @@ size_t gordejchik::RuleGraph::dfsCycle(size_t vertex, char* colors, size_t* path
   }
   colors[vertex] = 2;
   return 0;
+}
+
+void gordejchik::RuleGraph::dfsOrder(size_t vertex, char* visited,
+    size_t* order, size_t& filled) const
+{
+  visited[vertex] = 1;
+  for (size_t e = offsets_[vertex]; e < offsets_[vertex + 1]; ++e) {
+    if (visited[targets_[e]] == 0) {
+      dfsOrder(targets_[e], visited, order, filled);
+    }
+  }
+  order[filled] = vertex;
+  ++filled;
 }
